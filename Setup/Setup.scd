@@ -15,6 +15,9 @@ p=ProxySpace.push(s);
 p.makeTempoClock;
 //give proxyspace a tempo
 p.clock.tempo = 2;
+//Create the proxy mixer
+ProxyMixer.new(p);
+//Load the samples, synthdefs, and snippets
 Task({
 	3.wait;
 	d = Dictionary.new;
