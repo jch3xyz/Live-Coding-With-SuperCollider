@@ -334,3 +334,7 @@ d[\\offtom3] = Pseq([0],1);
 
 //Streson string effect
 DDWSnippets.put("streson","~streson = {Streson.ar(##Silent.ar##,0.0003,1,1)}");
+
+
+
+DDWSnippets.learn
