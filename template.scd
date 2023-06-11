@@ -6,12 +6,18 @@
 DDWSnippets.learn
 
 
-//Change tempo
-p.clock.tempo = 120/60;
-
-
 //Change global fade time
 p.fadeTime = 4;
 
 
+//Change tempo
+p.clock.tempo = 120/60;
+
+
+//Choose a random scale
+~scale = Scale.choose;
+
+
 //Begin
+
+
