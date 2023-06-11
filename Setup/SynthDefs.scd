@@ -502,7 +502,7 @@ SynthDef(\randomChaos,
 //voice = pmindex of PMOsc; fm gets multiplied by this number
 //susstain = sustain of the envelope
 
-SynthDef(\bellkick, {
+SynthDef(\soskick, {
   arg out, pan, freq = 65, fm = 0, speed = 0.3, voice = 1, sustain = 1, pitch2 = 0.00;
   var beater, source, env;
 
