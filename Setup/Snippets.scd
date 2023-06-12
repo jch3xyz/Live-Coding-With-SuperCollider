@@ -3,7 +3,7 @@
 DDWSnippets.put("ring1", "(~ring1 = Pbind(
 	\\instrument, \\ring1,
 	\\f, Pkey(\\freq),
-	\\scale, Scale.major,
+	\\scale, n.scale,
 	\\root, 0,
 	\\degree, Pseq([0], inf),
 	\\octave, 3,
