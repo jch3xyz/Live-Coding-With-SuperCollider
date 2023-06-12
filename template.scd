@@ -15,9 +15,8 @@ p.clock.tempo = 120/60;
 
 
 //Choose a random scale
-~scale = Scale.choose;
+Scale.choose
 
 
 //Begin
-
 

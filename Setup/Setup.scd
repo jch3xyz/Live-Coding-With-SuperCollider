@@ -13,12 +13,16 @@ s.options.numBuffers = 1024 * 16;
 s.options.memSize = 8192 * 64;
 //boot the server
 s.reboot;
+//Make a level meter
+s.meter;
 //start proxyspace
 p=ProxySpace.push(s);
 //start tempo clock
 p.makeTempoClock;
 //give proxyspace a tempo
 p.clock.tempo = 2;
+//Set a global fade time
+p.fadeTime = 4;
 //Create the proxy mixer
 ProxyMixer.new(p);
 
