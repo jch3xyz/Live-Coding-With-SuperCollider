@@ -13,8 +13,6 @@ s.options.numBuffers = 1024 * 16;
 s.options.memSize = 8192 * 64;
 //boot the server
 s.reboot;
-//Make a level meter
-s.meter;
 //start proxyspace
 p=ProxySpace.push(s);
 //start tempo clock
@@ -25,6 +23,8 @@ p.clock.tempo = 2;
 p.fadeTime = 4;
 //Create the proxy mixer
 ProxyMixer.new(p);
+//Make a level meter
+s.meter;
 
 //Load the samples, synthdefs, and snippets
 s.waitForBoot({

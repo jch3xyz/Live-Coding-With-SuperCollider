@@ -420,8 +420,7 @@ SynthDef(\sinfb, {
 
 /*
 
-ring1: a Ringz-based synth which is inspired by this: http://sccode.org/1-1b
-ring2, ring3 and ring4 represent the other tones used in this example, but I don't use them. They have been left in in case I would like to use the original combination of frequencies
+A Ringz-based synth which is inspired by this: http://sccode.org/1-1b
 the .tanh gives a wonderful squelch when driven very hard, and at low frequencies it resembles an acid bass
 
 f = frequency (the reason this isn't freq is because it doesn't seem to work)
@@ -444,53 +443,7 @@ SynthDef(\ring1,
 		Out.ar(out,Pan2.ar(sig.tanh,pan) * amp)
 	};
 ).add;
-/*SynthDef(\ring2,
-	{
-		arg f = 9000, a = 2, d = 0.1, amp = 1, pan = 2, out = 0;
-		var sig, env;
-		env = Line.kr(0,1,d);
-		env = FreeSelfWhenDone.kr(env);
-		sig = Impulse.ar(0);
-		sig = Ringz.ar(sig,f,d,a);
-		Out.ar(out,Pan2.ar(sig.tanh,pan) * amp)
-	};
-).add;
-SynthDef(\ring3,
-	{
-		arg f = 50, a = 3, d = 1, pan = 0, amp = 1, out = 0;
-		var sig, env;
-		env = Line.kr(0,1,d);
-		env = FreeSelfWhenDone.kr(env);
-		sig = Impulse.ar(0);
-		sig = Ringz.ar(sig,f,d,a);
-		Out.ar(out,Pan2.ar(sig.tanh,pan) * amp)
-	};
-).add;
-SynthDef(\ring4,
-	{
-		arg f = 8000, a = 1, d = 0.3, pan = 0, amp = 1, out = 0;
-		var sig, env;
-		env = Line.kr(0,1,d);
-		env = FreeSelfWhenDone.kr(env);
-		sig = Impulse.ar(0);
-		sig = Ringz.ar(sig,f,d,a);
-		Out.ar(out,Pan2.ar(sig.tanh,pan) * amp)
-	};
-).add; */
 
-/*
-//this needs to be re-evaluated every time there is a note played - so it needs work.
-//not working thus far
-SynthDef(\randomChaos,
-	{ arg out = 0, atk = 0, rel = 0.1, sus = 0;
-		var sig, env, chaosUgen, chaosUgenPick;
-		env = EnvGen.ar(Env.linen(atk,sus,rel),doneAction:2);
-		chaosUgen = ChaosGen.allSubclasses;
-		sig = chaosUgen[rrand(0,10)].ar;
-		sig = sig*env;
-		Out.ar(out,Pan2.ar(sig));
-}).add;
-*/
 
 ///////////////////////////////////////////////////////////////////////////
 /*    SuperDirt Synths */
