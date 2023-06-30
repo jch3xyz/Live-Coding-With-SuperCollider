@@ -13,4 +13,12 @@ DDWSnippets.put("ring1", "(~ring1 = Pbind(
 	\\amp, 0.7
 );)
 
-~ring1.play");
+~ring1.play;");
+
+DDWSnippets.put("kick", "(~kick = Pbind(\\instrument, \\AnalogKick,
+	\\freq, 50,
+	\\amp, 2.5
+	\\dur, ##1##,
+);)
+
+~kick.play;")

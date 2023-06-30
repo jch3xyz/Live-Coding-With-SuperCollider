@@ -464,4 +464,20 @@ SynthDef(\hats, {
 		Out.ar(out, Pan2.ar(noise, pan, env * amp));
 	}).add;
 
+
+
+SynthDef(\AnalogKick,
+	{arg out, pan, amp=1, decay=1, freq=50, tone=0.15, attackfm=0.5, selffm=0.25;
+		var sig, env;
+		sig = AnalogBassDrum.ar(trig: Impulse.ar(1),infsustain: 0,accent: 0.5,freq: freq ,tone: tone,decay: decay,attackfm: attackfm,selffm: selffm);
+
+		env = Env.perc(0.001, decay).ar(Done.freeSelf);
+
+		Out.ar(out, Pan2.ar(sig, pan, 12*amp*env));
+
+	};
+).add
+
 )
+
+
