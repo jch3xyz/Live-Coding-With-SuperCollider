@@ -467,16 +467,28 @@ SynthDef(\hats, {
 
 
 SynthDef(\AnalogKick,
-	{arg out, pan, amp=1, decay=1, freq=50, tone=0.15, attackfm=0.5, selffm=0.25;
+	{arg out, pan, amp=1, decay=1, freq=50, tone=0.15, attackfm=0.5, selffm=0.25, accent=0.4;
 		var sig, env;
-		sig = AnalogBassDrum.ar(trig: Impulse.ar(1),infsustain: 0,accent: 0.5,freq: freq ,tone: tone,decay: decay,attackfm: attackfm,selffm: selffm);
+		sig = AnalogBassDrum.ar(trig: Impulse.ar(1),infsustain: 0,accent: accent,freq: freq ,tone: tone,decay: decay,attackfm: attackfm,selffm: selffm);
 
 		env = Env.perc(0.001, decay).ar(Done.freeSelf);
 
-		Out.ar(out, Pan2.ar(sig, pan, 12*amp*env));
+		Out.ar(out, Pan2.ar(sig, pan, 24*amp*env));
 
 	};
-).add
+).add;
+
+SynthDef(\AnalogSnare,
+	{arg out, pan, amp=1, decay=0.65, freq=150, tone=0.4, snap=0.7, accent=0.3;
+		var sig, env;
+		sig = AnalogSnareDrum.ar(trig: Impulse.ar(1),infsustain: 0,accent: accent,freq: freq ,tone: tone,decay: decay, snappy: snap);
+
+		env = Env.perc(0.001, decay).ar(Done.freeSelf);
+
+		Out.ar(out, Pan2.ar(sig, pan, amp*env));
+
+	};
+).add;
 
 )
 
