@@ -24,7 +24,7 @@ p.fadeTime = 4;
 //Create the proxy mixer
 ProxyMixer.new(p);
 //Make a level meter
-s.meter;
+//s.meter;
 
 //Load the samples, synthdefs, and snippets
 s.waitForBoot({
