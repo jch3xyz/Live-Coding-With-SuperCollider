@@ -57,5 +57,15 @@ s.waitForBoot({
 	s.sync;
 	s.freeAll;
 	"Setup done!".postln;
+
+	//Prepare to record and set the file path to save the recording
+	s.prepareForRecord(PathName(thisProcess.nowExecutingPath.dirname).parentPath +/+ "Recordings/" +/+ "SC_" ++ Date.getDate.format("%y%m%d_%H%M%S") ++ ".wav");
+	s.sync;
+	"Ready to record!".postln;
+
 }).start;
 )
+
+//Date.getDate.format("%y%m%d_%H%M%S").postln
+
+//(PathName(thisProcess.nowExecutingPath.dirname).parentPath +/+ "Recordings/" +/+ "SC_" ++ Date.getDate.format("%y%m%d_%H%M%S") ++ ".wav").postln
