@@ -7,6 +7,8 @@ ServerTree.removeAll;
 ServerQuit.removeAll;
 Tdef.removeAll;
 
+//Set the sample rate to match your system
+s.options.sampleRate = 48000;
 //increase number of buffers the server has access to for loading samples
 s.options.numBuffers = 1024 * 16;
 //increase the memory available to the server
@@ -29,6 +31,7 @@ ProxyMixer.new(p);
 //Load the samples, synthdefs, and snippets
 s.waitForBoot({
 	3.wait;
+	//Load samples into Buffers and organize them in a dictionary d
 	d = Dictionary.new;
 	d.add(\foldernames -> PathName(thisProcess.nowExecutingPath.dirname +/+ "samples/set1").entries);
 	for (0, d[\foldernames].size-1,
