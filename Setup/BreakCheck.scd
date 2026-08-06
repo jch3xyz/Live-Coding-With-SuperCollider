@@ -263,6 +263,52 @@ Routine {
 		};
 
 		"".postln;
+		"=== transients survive the slice seam ===".postln;
+		// The fixture's clicks sit 8% into each slice, but a real break's hits land ON
+		// the slice boundary — inside the grain window's attack ramp, which is a
+		// fraction of grain length and so ~500us at chop density. Grain pre-roll starts
+		// each grain slightly early so the boundary transient lands past that ramp.
+		// Compare peak per hit at the chop station against the intact loop.
+		block {
+			var intact, chops, ratio;
+			intact = render.("tr_intact", [], 3.0,
+				[\buf, 0, \tempo, 2] ++ base ++ [\grind, 0], [f175]);
+			chops = render.("tr_chops", [], 3.0,
+				[\buf, 0, \tempo, 2] ++ base ++ [\grind, 0.5], [f175]);
+			if(intact.notNil and: { chops.notNil }) {
+				ratio = chops.abs.maxItem / intact.abs.maxItem;
+				check.("chop-station peak within 3 dB of the intact loop",
+					ratio.ampdb.abs < 3,
+					"chops " ++ chops.abs.maxItem.round(0.001) ++ " vs intact "
+						++ intact.abs.maxItem.round(0.001) ++ " = "
+						++ ratio.ampdb.round(0.1) ++ " dB");
+			};
+		};
+
+		"".postln;
+		"=== the chop station stays on-grid after a grind move ===".postln;
+		// The grain grid is derived from the loop phase rather than free-running, so
+		// coincidence with the slice grid survives any grind history. A free-running
+		// phasor lost it permanently the first time grind moved.
+		sig = render.("regrind",
+			[[0.7, ['/n_set', 1000, \grind, 1.0]],
+			 [1.4, ['/n_set', 1000, \grind, 0.31]],
+			 [2.1, ['/n_set', 1000, \grind, 0.5]]],
+			5.0, [\buf, 0, \tempo, 2, \amp, 1] ++ base, [f175]);
+		if(sig.notNil) {
+			// after the return to 0.5, onsets must still be one 16th apart
+			var tail = sig.copyRange((2.6 * sr).asInteger, (4.9 * sr).asInteger);
+			ons = onsets.(tail);
+			sp = ons.collect(_[\at]).differentiate.drop(1);
+			expect = 0.125 * sr;
+			check.("back at grind 0.5, onsets are one 16th apart again",
+				(sp.size > 0) and: {
+					sp.every { |s| (s - expect).abs < (expect * 0.05) } },
+				"mean " ++ (if(sp.size > 0) { sp.mean.round(0.1) } { "none" })
+					++ ", expect " ++ expect);
+		};
+
+		"".postln;
 		"=== roll does not stack grains ===".postln;
 		// roll adds triggers at roll x the slice rate. If grain length still followed
 		// only the grain grid, each roll would pile `roll` full-length grains on top

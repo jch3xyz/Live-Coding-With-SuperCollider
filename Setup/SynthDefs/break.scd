@@ -36,6 +36,7 @@ Spec.add(\grind, [0, 1]);
 Spec.add(\over,  [0.25, 4, \exp]);
 Spec.add(\scram, [0, 1]);
 Spec.add(\jit,   [0, 1]);
+Spec.add(\pre,   [0, 0.25]);
 Spec.add(\vari,  [0, 1]);
 Spec.add(\flip,  [0, 1]);
 Spec.add(\roll,  ControlSpec(1, 16, \exp, 1, 1));
@@ -56,6 +57,7 @@ SynthDef(\break, {
 	var over = \over.kr(1);
 	var scram = \scram.kr(0);
 	var jit = \jit.kr(0);
+	var pre = \pre.kr(0.012);            // grain pre-roll, as a fraction of grain length
 	var vari = \vari.kr(1);
 	var rate = \rate.kr(1);
 	var pos = \pos.kr(0);
@@ -96,13 +98,21 @@ SynthDef(\break, {
 	var g2 = grind * 2;
 	var gpl = (steps ** g2.clip(0, 1))
 		* (((64 * beats / steps).max(1)) ** (g2 - 1).clip(0, 1));
-	var trigRate = (gpl * loopRate).max(0.01);
-	// the grain grid gets its OWN phasor rather than being derived as loopPhase * gpl:
-	// scaling an advancing phase by a moving factor makes the phase itself jump, which
-	// fires spurious extra grains while \grind is being swept. Both phasors start
-	// together at reset, so at grind 0.5 (gpl == steps) grain and slice onsets are
-	// still exactly coincident — which is what makes that station a clean chop.
-	var grainPhase = Phasor.ar(resync, trigRate * SampleDur.ir, 0, 1, 0);
+	// The grain phase is DERIVED from the loop phase, so it is coherent with the slice
+	// grid by construction — at grind 0.5 (gpl == steps) a grain onset lands exactly on
+	// a slice boundary, permanently, no matter what grind has done in between. A
+	// free-running phasor of its own rate loses that the first time grind moves: the
+	// phase is left wherever it was, and the chop station quietly stops being on-grid
+	// (measured: the wrong slice sounding for the first 150 ms of a 250 ms slot).
+	//
+	// The reason not to derive it naively is that scaling an ADVANCING phase by a
+	// MOVING factor adds a d(gpl)/dt term to its rate, which fires a burst of spurious
+	// grains while grind is swept. So gpl is sampled once per slice: within a slice the
+	// rate is exactly right, and the one phase jump per gpl change lands on a slice
+	// boundary, where a grain is starting anyway.
+	var gplHeld = Latch.ar(K2A.ar(gpl), sliceTrig);
+	var trigRate = (gplHeld * loopRate).max(0.01);
+	var grainPhase = (loopPhase * gplHeld).frac;
 	var grainTrig = (HPZ1.ar(grainPhase) < -0.25) + Impulse.ar(0) + resync;
 	// gating the TRIGGER rather than the output means a rest can never cut the tail
 	// of a grain that is still sounding
@@ -121,10 +131,22 @@ SynthDef(\break, {
 	var stretch = bufDur * loopRate;              // rate that makes the source fit
 	var flipped = TRand.ar(0, 1, trig) < flip;
 	var grate = rate * (stretch ** vari) * (1 - (2 * flipped));
-	// a reversed grain starts at the far end of the region it would have played
 	var srcLen = gdur * grate.abs / bufDur;
+	// A backwards grain has to start at the far end of the region it would have played
+	// forwards. Keyed on the SIGN OF PLAYBACK, not on the flip coin: \speed is spec'd
+	// -4..4, so a slider crossing zero reverses playback too, and keying on flip alone
+	// made that play the previous slice (measured: one whole slice off at grind 0.5).
+	var backwards = grate < 0;
+	// Pre-roll: start each grain a hair before its slice so that the transient AT the
+	// slice boundary lands past the window's attack ramp instead of inside it. Window
+	// edges are fractions of grain length, so at chop density punch's 0.4% attack is
+	// ~500 us — right where a break's hits live, costing ~10 dB of every on-grid
+	// transient. The cost is that a grain begins with a sliver of the previous slice's
+	// tail, which at 1% is inaudible.
+	var preroll = pre * srcLen;
 	var spray = TRand.ar(-1, 1, trig) * jit.squared * 0.1;
-	var ptr = (((srcIdx + subFrac) / steps) + pos + spray + (flipped * srcLen)).wrap(0, 1);
+	var ptr = (((srcIdx + subFrac) / steps) + pos + spray
+		+ (backwards * srcLen) - preroll).wrap(0, 1);
 
 	var env = EnvGen.ar(Env.asr(atk, 1, rel), gate, doneAction: 2);
 	// Overlap compensation is 1/over, not the usual 1/sqrt(over) for grain clouds:
