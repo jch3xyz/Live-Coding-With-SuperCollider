@@ -49,7 +49,9 @@ s.waitForBoot({
 	d = Dictionary.new;
 	PathName(setupDir +/+ "samples").folders.do { |folder|
 		d.add(folder.folderName -> folder.files
-			.select { |f| ["wav", "aiff", "aif", "flac"].includes(f.extension.toLower) }
+			//includesEqual, NOT includes: Collection:includes tests identity, so
+			//["wav"].includes("wav") is false and every folder loaded empty.
+			.select { |f| ["wav", "aiff", "aif", "flac"].includesEqual(f.extension.toLower) }
 			.collect { |sf| Buffer.read(s, sf.fullPath) });
 	};
 	s.sync;
