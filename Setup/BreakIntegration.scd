@@ -211,6 +211,55 @@ if(\Break.asClass.isNil) {
 			"bpm 172, src sidecar");
 
 		"".postln;
+		"=== resync actually fires ===".postln;
+		// Guards a near-miss: firing a \tr control by set-then-unset can have the
+		// unset's default-0 land in the same control block and cancel the trigger
+		// before the synth sees it. This counts real transitions inside a live synth.
+		block {
+			var bus = Bus.control(Server.default, 1), before, after;
+			SynthDef(\breakTrigProbe, { |cbus = 0|
+				var narrowed = Trig1.ar(K2A.ar(\resync.tr(0)), SampleDur.ir);
+				Out.kr(cbus, A2K.kr(PulseCount.ar(narrowed)));
+				Out.ar(\out.kr(0), Silent.ar(2));
+			}).add;
+			Server.default.sync;
+			~probe = \breakTrigProbe;
+			~probe.set(\cbus, bus.index);
+			~probe.play;
+			1.wait;
+			before = bus.getSynchronous;
+			3.do { Break.trig(~probe, \resync); 0.2.wait };
+			0.5.wait;
+			after = bus.getSynchronous;
+			check.("Break.trig delivers real trigger transitions",
+				(after - before) >= 3,
+				(after - before).asString ++ " of 3 fired");
+			check.("and leaves nothing in the nodeMap to re-fire on rebuild",
+				~probe.nodeMap.at(\resync).isNil, "nodeMap clean");
+			~probe.clear;
+			bus.free;
+		};
+
+		"".postln;
+		"=== chained metadata setters ===".postln;
+		block {
+			var e;
+			// Break.set returns the registry Event, and an Event turns an unknown
+			// foo_(x) into a key write — so a chained setter used to vanish silently.
+			// bpm and beats are two views of one fact tied together by the file's
+			// length, so the last call legitimately re-derives the other one: 8 beats
+			// in this 2.667s file IS 180 bpm. What must hold is that the second call
+			// took effect at all, and manufactured no junk key.
+			\slow90bpm.bpm_(120).len_(8);
+			e = Break.at(\slow90bpm);
+			check.("the chained second setter took effect", e[\beats] == 8,
+				"beats " ++ e[\beats]);
+			check.("and the linked value was re-derived, not left stale",
+				(e[\bpm] - 180).abs < 1, "bpm " ++ e[\bpm] ++ " (8 beats in 2.667s)");
+			check.("no junk key was manufactured", e[\len].isNil, "no stray len key");
+		};
+
+		"".postln;
 		"=== robustness ===".postln;
 		~notABreak.grind(0.5);
 		check.("a break word on a non-break proxy warns instead of throwing",

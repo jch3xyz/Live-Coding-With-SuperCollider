@@ -100,7 +100,10 @@ q[\breakTour] = { |key, beats = 8|
 	};
 };
 
-// just the three advertised stations, held long enough to judge
+// The three stations, each heard twice: first in source order — where they should
+// sound nearly IDENTICAL, because pieces in their original order reassemble the
+// original loop at any resolution — and then scrambled, where the piece size finally
+// becomes audible. Hearing the pair is the point: it teaches what grind actually is.
 q[\breakStations] = { |key, beats = 16|
 	var voice;
 	~brk.brk(key ?? { Break.keyAt(0) });
@@ -108,18 +111,19 @@ q[\breakStations] = { |key, beats = 16|
 	voice = ~brk;
 	Tdef(\breakStations, {
 		[
-			"grind 0.0 — one grain per loop: should sound like the loop, intact"
-				-> 0.0,
-			"grind 0.5 — one grain per slice: should sound like clean chops on the grid"
-				-> 0.5,
-			"grind 1.0 — 64 grains per beat: should sound like dust"
-				-> 1.0
+			"grind 0.0 — one grain per loop"   -> 0.0,
+			"grind 0.5 — one grain per slice"  -> 0.5,
+			"grind 1.0 — 64 grains per beat"   -> 1.0
 		].do { |pair|
-			pair.key.postln;
+			("  " ++ pair.key ++ ", IN ORDER — expect: the loop, near-untouched").postln;
 			voice.grind(pair.value).over(1).vari(1).win(\punch).jit(0).roll(1).ord;
 			beats.wait;
+			("  " ++ pair.key ++ ", SCRAMBLED — expect: the piece size, audible").postln;
+			voice.scr(1);
+			beats.wait;
+			voice.scr(0);
 		};
-		"BreakStations: done".postln;
+		"BreakStations: done — did the scrambled pass change character with grind?".postln;
 	}).play(p.clock, quant: 4);
 };
 

@@ -33,8 +33,12 @@ Spec.add(\jit,   [0, 1]);
 Spec.add(\vari,  [0, 1]);
 Spec.add(\flip,  [0, 1]);
 Spec.add(\roll,  ControlSpec(1, 16, \exp, 1, 1));
-Spec.add(\beats, ControlSpec(1, 64, \lin, 1, 4));
 Spec.add(\steps, ControlSpec(1, 64, \lin, 1, 16));
+// deliberately NO Spec for \beats: SuperCollider's own registry already defines
+// \beats as an LFO rate in Hz (0..20), and registering ours would overwrite a
+// main-class-library Spec for every other user of it. \beats here is metadata read
+// off the sample, set by `brk` rather than dragged by a performer, so rule 7's
+// "every performative arg has a Spec" does not apply to it.
 
 SynthDef(\break, {
 	var out = \out.kr(0);
@@ -97,7 +101,17 @@ SynthDef(\break, {
 	// gating the TRIGGER rather than the output means a rest can never cut the tail
 	// of a grain that is still sounding
 	var trig = (grainTrig + rollTrig) * live;
-	var gdur = (over / trigRate).clip(0.0005, 8);
+	// Grain length follows the FASTEST trigger source, not just the grain grid: roll
+	// adds triggers at roll x the slice rate, and without this a roll would stack
+	// `roll` full-length grains on top of each other (up to +24 dB at roll 16).
+	// The ceiling is deliberately generous — at grind 0 a grain IS the whole loop,
+	// and a tight cap silently truncated any loop longer than it.
+	// gated by (roll > 1) exactly as rollTrig is — otherwise the slice-rate term
+	// dominates even with roll off, and a grind-0 grain shrinks from a whole loop to
+	// one slice
+	var rollRate = loopRate * steps * roll * (roll > 1);
+	var effRate = trigRate.max(rollRate);
+	var gdur = (over / effRate).clip(0.0005, 60);
 	var stretch = bufDur * loopRate;              // rate that makes the source fit
 	var flipped = TRand.ar(0, 1, trig) < flip;
 	var grate = rate * (stretch ** vari) * (1 - (2 * flipped));

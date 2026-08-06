@@ -263,6 +263,79 @@ Routine {
 		};
 
 		"".postln;
+		"=== roll does not stack grains ===".postln;
+		// roll adds triggers at roll x the slice rate. If grain length still followed
+		// only the grain grid, each roll would pile `roll` full-length grains on top
+		// of each other — measured at up to +24 dB before this was fixed.
+		sig = [1, 2, 4, 8].collect { |r|
+			var s = render.("roll" ++ r, [], 3.0,
+				[\buf, 0, \tempo, 2] ++ base ++ [\roll, r], [f175]);
+			s !? { s.abs.maxItem }
+		};
+		if(sig.every(_.notNil)) {
+			check.("peak stays bounded across roll = [1, 2, 4, 8]",
+				(sig.maxItem / sig[0]) < 2.0,
+				"peaks " ++ sig.collect { |v| v.round(0.001) }
+					++ ", worst ratio " ++ (sig.maxItem / sig[0]).round(0.01) ++ "x");
+			check.("and no roll setting clips",
+				sig.maxItem <= 1.0, "max peak " ++ sig.maxItem.round(0.001));
+		};
+
+		"".postln;
+		"=== \\brk1 window length (sustain is in BEATS) ===".postln;
+		// An event's \sustain is in beats, not seconds: dur 0.25 at tempo 2 yields
+		// 0.25. Treating it as seconds made every chop's window tempo-times too long.
+		block {
+			var brk1Path = setupDir +/+ "SynthDefs" +/+ "brk1.scd";
+			var out = work +/+ "brk1win.aiff";
+			var osc = work +/+ "brk1win.osc";
+			var done = false, waited = 0, data = nil, tail;
+			// a CONTINUOUS tone, not the click fixture: with sparse clicks the last
+			// sample above threshold is the last click, not the end of the window
+			var tonePath = work +/+ "tone.wav";
+			var toneFrames = (2.0 * sr).asInteger;
+			var tone = Signal.newClear(toneFrames);
+			var tsf;
+			toneFrames.do { |i| tone[i] = 0.5 * sin(2pi * 1000 * i / sr) };
+			if(File.exists(tonePath)) { File.delete(tonePath) };
+			tsf = SoundFile.new.headerFormat_("WAV").sampleFormat_("float")
+				.numChannels_(1).sampleRate_(sr);
+			tsf.openWrite(tonePath);
+			tsf.writeData(tone.as(FloatArray));
+			tsf.close;
+			Score([
+				[0.0, ['/b_allocRead', 0, tonePath, 0, -1]],
+				[0.0, ['/d_recv', brk1Path.load.asBytes]],
+				// 1 beat of sustain at tempo 2 must sound for 0.5 s, not 1 s
+				[0.01, ['/s_new', \brk1, 1000, 0, 0,
+					\buf, 0, \sustain, 1, \tempo, 2, \amp, 1, \rel, 0.01]],
+				[2.0, ['/c_set', 0, 0]]
+			]).recordNRT(osc, out, nil, sr, "AIFF", "float",
+				ServerOptions.new.numOutputBusChannels_(2).sampleRate_(sr),
+				action: { done = true });
+			while { done.not and: { waited < 60 } } { 0.25.wait; waited = waited + 0.25 };
+			0.5.wait;
+			block { |brk|
+				var sf = SoundFile.openRead(out);
+				if(sf.isNil) { brk.value };
+				data = FloatArray.newClear(sf.numFrames * sf.numChannels);
+				sf.readData(data);
+				sf.close;
+				data = data[0, sf.numChannels .. data.size - sf.numChannels];
+			};
+			if(data.notNil) {
+				// last sample above a small threshold = where the window closed
+				tail = data.size - 1;
+				while { (tail > 0) and: { data[tail].abs < 0.001 } } { tail = tail - 1 };
+				check.("1 beat at tempo 2 gives a 0.5 s window, not 1 s",
+					((tail / sr) - 0.5).abs < 0.05,
+					"window ended at " ++ (tail / sr).round(0.001) ++ "s");
+			} {
+				check.("brk1 render produced output", false, "no data");
+			};
+		};
+
+		"".postln;
 		"=== lifecycle ===".postln;
 		sig = render.("die", [[1.0, ['/n_set', 1000, \gate, 0]]], 3.0,
 			[\buf, 0, \tempo, 2, \amp, 1, \rel, 0.2] ++ base, [f175]);
