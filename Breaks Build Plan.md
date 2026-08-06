@@ -374,9 +374,29 @@ Every item here came from measurement or from a collision check, not from taste.
     60-character freesound filename usable mid-set, and it solves the "auto keys are
     ugly" problem without any name-shortening heuristic.
 
-12. **Verification artifacts are permanent**: `Setup/BreakCheck.scd` (NRT battery,
-    builds its own fixtures, re-runnable after any engine edit) and
-    `TestBreak.run` (language-side, instant).
+12. **Verification artifacts are permanent**, three of them, because each catches a
+    class of bug the others cannot see: `TestBreak.run` (pure functions, instant),
+    `Setup/BreakCheck.scd` (NRT — the DSP, measured in rendered audio), and
+    `Setup/BreakIntegration.scd` (a live server — scan, the proxy vocabulary, the
+    sidecar round trip). All three build their own fixtures, so none needs a
+    sample library.
+
+13. **A silent-no-match bug in file discovery, which was John's too.**
+    `Break.scan` found zero files in a folder full of `.wav` files and printed no
+    warning. Cause: `Collection:includes` tests **identity**, not equality, so
+    `["wav"].includes("wav")` is `false` — while `"wav" == "wav"` is `true`, which
+    is exactly what makes it invisible when read. (`Collection.sc:139`, vs
+    `includesEqual` at `:143`.) Extensions are now compared as Symbols, which are
+    interned so identity and equality coincide.
+
+    The same expression was in **Setup.scd's own sample loader**, where every key in
+    `d` would have loaded as an empty array. It had gone unnoticed only because
+    `samples/` is currently empty; it would have bitten on the next set loaded.
+    Fixed there too, with `includesEqual`.
+
+    Worth noting how it was found: not by reading, and not by any pure-function or
+    NRT test — only by running the real scan against real files. That is the reason
+    `BreakIntegration.scd` exists as a permanent artifact rather than a throwaway.
 
 ## Verified, and not
 
