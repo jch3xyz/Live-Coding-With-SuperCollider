@@ -1,10 +1,18 @@
 # Breaks — Build Plan (breakbeat machine)
 
-Status: **BUILT August 2026.** Designed and implemented in one session; verified
-headless (70 language-side assertions + a 13-render NRT battery). Not yet played —
-John has no break library loaded yet, so calibration by ear is outstanding.
+Status: **BUILT August 2026.** Designed, implemented and reviewed in one session.
+Verified headless by three gates — 75 language-side assertions (`TestBreak.run`),
+20 NRT audio measurements (`Setup/BreakCheck.scd`), 34 live-server checks
+(`Setup/BreakIntegration.scd`) — all green. **Not yet played:** there is no break
+library loaded, so calibration by ear is the outstanding work.
 Owner: John. Companion docs: "Design Notes.md" (language thesis), "Roadmap.md"
 (build pipeline), Setup/SynthDefs/CONVENTIONS.md (def contract).
+
+> **Reading order.** Everything above "As built" is the design as *planned*. Several
+> parts of it were superseded during the build — the step counter, the tempo bus, the
+> `grind` curve, the overlap law, the grain windows — and where the two disagree, the
+> **As built** section at the bottom is what the code does, with the measurement that
+> forced each change.
 
 Documentation shipped with the code: **Guides/Breaks** (tutorial, runnable with
 SuperCollider's own bundled sound so it needs no library), **Classes/Break**
@@ -429,6 +437,39 @@ Every item here came from measurement or from a collision check, not from taste.
     The review also produced the most useful *musical* observation in the build, which
     is not a bug at all — see the `grind` note below.
 
+    A **refutation pass** then re-measured every finding and kept five, all confirmed
+    by its own NRT renders. Two of them were in the station the instrument is named
+    for, and both are worth understanding:
+
+    - **The chop station had stopped being on the grid.** The grain grid was running on
+      a phasor of its own rather than being derived from the loop phase. That is clean
+      while `grind` is swept, but it loses grid coincidence *permanently* the first
+      time `grind` moves — the phase is left wherever it was. Measured: after
+      `0.5 → 1.0 → 0.5`, the wrong slice sounded for the first 150 ms of a 250 ms slot,
+      so the requested slice lost its attack. The code's own comment claimed the
+      opposite. Fixed by deriving the grain phase from the loop phase again, but with
+      the grains-per-loop factor **sampled once per slice** — which keeps both
+      properties at once: exact rate within a slice (no spurious grains during a
+      sweep), and any phase jump landing on a slice boundary where a grain starts
+      anyway. Re-measured after `0.5 → 1.0 → 0.31 → 0.5`: onsets exactly 5512.5 samples
+      apart again.
+    - **The chop station was losing 9.9 dB of every on-grid transient** — the exact
+      mush the `\punch` window was chosen to prevent. Grain window edges are
+      *fractions* of grain length, so at chop density even a 0.5% attack is ~500 µs,
+      which is precisely where a break's hits sit. Fixed with a **pre-roll**: each
+      grain starts a hair before its slice, so the boundary transient lands past the
+      ramp. Re-measured: 0.0 dB against the intact loop. The cost is a sliver of the
+      previous slice's tail at each grain head, inaudible at the 1.2% default.
+    - Plus: a `\speed` slider crossing zero played the previous slice (the reverse
+      offset was keyed on the flip coin rather than on the sign of playback); a
+      hand-written `key:` rename in a sidecar was destroyed by the next correction in
+      that folder; and after a server stop the vocabulary threw raw
+      doesNotUnderstand errors instead of saying "run Break.scan again".
+    - And one that is documentation, not code: **`\hann` wants `over` ≥ 2.** Its edges
+      are half the grain each way, so at `over(1)` grains do not overlap enough to sum
+      back to a flat level and the output is gated at the slice rate — 95 dB of dip per
+      seam, versus flat within 3 dB at `over(2)`.
+
 15. **`grind` alone is nearly inaudible, and that is correct.** Pieces played in their
     original order at their original times reassemble the original loop at *any*
     resolution. So `grind` does not transform audio; it sets the **resolution** every
@@ -440,14 +481,16 @@ Every item here came from measurement or from a collision check, not from taste.
 
 ## Verified, and not
 
-**Measured true** (final gate counts: 75 language-side assertions, 18 NRT checks,
+**Measured true** (final gate counts: 75 language-side assertions, 20 NRT checks,
 34 live-server checks — all green): slice onsets land on the session grid to the
 sample (5512.5 samples for a sixteenth at 120 bpm, min 5512 / max 5514); a 90 bpm
 source and a 175 bpm source both lock to the same 120 bpm grid; the grid follows a
 tempo change; rests silence their slices; a buffer swap has no gap; `vari 0` holds the
 loop period to exactly 88200 samples; level is flat to 0.0 dB across
 `over = [0.5, 1, 2, 4]` and peak ratio 1.0× across `roll = [1, 2, 4, 8]`; peak is
-−3.8 dBFS at default amp on worst-case full-scale-impulse material; a 1-beat chop
+−9.2 dBFS at default amp on worst-case full-scale-impulse material; the chop station
+holds transients to 0.0 dB against the intact loop and returns to exact grid spacing
+after a grind round trip; a 1-beat chop
 window at tempo 2 lasts 0.5 s; the node frees itself on gate release; the inference
 ignores freesound id numbers, reads `breaks175` folder names, and prefers power-of-two
 beat counts; the sidecar round-trips and beats inference on rescan.
