@@ -398,16 +398,59 @@ Every item here came from measurement or from a collision check, not from taste.
     NRT test — only by running the real scan against real files. That is the reason
     `BreakIntegration.scd` exists as a permanent artifact rather than a throwaway.
 
+14. **An adversarial review pass found nine more defects after the build looked
+    done**, which is the strongest argument in this document for keeping the
+    three-gate habit. Four independent reviewer lenses (DSP correctness, musical
+    behaviour, house conventions, language robustness) read the finished code and ran
+    their own measurements. The ones that survived checking:
+
+    - **`chop` windows were `tempo`× too long.** An event's `\sustain` is in *beats*,
+      not seconds (measured: `dur 0.25` at tempo 2 yields 0.25). `\brk1` treated it as
+      seconds, so every chop overran its step and smeared into the next. It now takes
+      tempo as a control and divides. `\brk1` had no automated coverage at all before
+      this; it does now.
+    - **`roll` stacked full-length grains** — up to +24 dB — because grain length
+      followed only the grain grid while roll added triggers at `roll ×` the slice
+      rate. (Fixing it wrong first shrank a grind-0 grain from a whole loop to one
+      slice; the NRT battery caught that within one run.)
+    - **Swapping to a longer break left the sequence length stale**, so only the first
+      part of the new loop was ever reached.
+    - **Chained `\amen.bpm_(172).len_(8)` silently vanished**: `Break.set` returned the
+      registry Event, and an Event turns an unknown `foo_(x)` into a key write.
+    - **A server reboot could make the registry free somebody else's buffer**, since
+      stale bufnums get reissued after the next boot.
+    - **`Spec.add(\beats, …)` was overwriting a main-class-library Spec** (SC already
+      defines `\beats` as an LFO rate in Hz).
+    - Plus: a quote in a filename produced an uncompilable sidecar, the tempo watcher
+      flooded the post window when there was no ProxySpace, a `beats` correction did
+      not re-derive the slice grid, and the engine's own documented raw invocation
+      omitted `\sbuf` and so stuttered on garbage.
+
+    The review also produced the most useful *musical* observation in the build, which
+    is not a bug at all — see the `grind` note below.
+
+15. **`grind` alone is nearly inaudible, and that is correct.** Pieces played in their
+    original order at their original times reassemble the original loop at *any*
+    resolution. So `grind` does not transform audio; it sets the **resolution** every
+    other gesture operates at. The same `scr(0.5)` is a beat shuffle at `grind(0.3)`
+    and a texture at `grind(0.9)`. The docs originally promised "dust" at `grind(1)`,
+    which overstated it — they now say what actually happens, and `BreakTour`'s
+    station demo plays each station twice, in order and then scrambled, because
+    hearing the pair is what teaches the distinction.
+
 ## Verified, and not
 
-**Measured true:** slice onsets land on the session grid to the sample (5512.5
-samples for a sixteenth at 120 bpm, min 5512 / max 5514); a 90 bpm source and a
-175 bpm source both lock to the same 120 bpm grid; the grid follows a tempo change;
-rests silence their slices; a buffer swap has no gap; `vari 0` holds the loop period
-to exactly 88200 samples; peak is −3.8 dBFS at default amp on worst-case
-full-scale-impulse material; the node frees itself on gate release; 70 language-side
-assertions pass, including that the inference ignores freesound id numbers and reads
-`breaks175` folder names.
+**Measured true** (final gate counts: 75 language-side assertions, 18 NRT checks,
+34 live-server checks — all green): slice onsets land on the session grid to the
+sample (5512.5 samples for a sixteenth at 120 bpm, min 5512 / max 5514); a 90 bpm
+source and a 175 bpm source both lock to the same 120 bpm grid; the grid follows a
+tempo change; rests silence their slices; a buffer swap has no gap; `vari 0` holds the
+loop period to exactly 88200 samples; level is flat to 0.0 dB across
+`over = [0.5, 1, 2, 4]` and peak ratio 1.0× across `roll = [1, 2, 4, 8]`; peak is
+−3.8 dBFS at default amp on worst-case full-scale-impulse material; a 1-beat chop
+window at tempo 2 lasts 0.5 s; the node frees itself on gate release; the inference
+ignores freesound id numbers, reads `breaks175` folder names, and prefers power-of-two
+beat counts; the sidecar round-trips and beats inference on rescan.
 
 **Not verified, by nature:** whether the middle of the `grind` range is *musically*
 useful rather than merely continuous, and whether the word names survive contact
