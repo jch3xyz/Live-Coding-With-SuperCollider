@@ -6,7 +6,13 @@
 // tempo, indexes the library and rewrites sequences is the Break class in the
 // Synesthesia quark (CONVENTIONS rule 5 — a def may not touch interpreter state).
 // Try:  ~d.brk(\amen); ~d.play; ~d.grind(0.7)
-// Raw:  Synth(\break, [\buf, b.bufnum, \beats, 4, \steps, 16, \tempo, 2])
+// Raw:  the engine reads its slice order out of a control buffer, so playing it by
+// hand means supplying one — with \sbuf left at 0 it reads whatever buffer 0 holds
+// and stutters on garbage:
+//   b = Buffer.readChannel(s, path, channels: [0]);        // MONO, see below
+//   q = Buffer.alloc(s, 64, 1); q.setn(0, (0..63));        // plain source order
+//   Synth(\break, [\buf, b.bufnum, \sbuf, q.bufnum, \slen, 16,
+//       \beats, 4, \steps, 16, \tempo, 2])
 //
 // HOW IT WORKS
 // A Phasor runs one cycle per loop at the session tempo, so every grid in the synth
