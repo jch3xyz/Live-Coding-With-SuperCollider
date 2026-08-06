@@ -3,13 +3,17 @@
 // then rename words and retune curves based on what you actually hear.
 //
 // Requires: Setup.scd evaluated (server, ProxySpace p, tempo clock), and at least
-// one break in Setup/samples/breaks*/. With no library at all, run the DEMO block
-// at the bottom first — it builds a usable break from SuperCollider's own sound.
+// one break in Setup/samples/breaks*/. With no library at all, run
+// q[\breakDemo].value first — it builds a usable break from SuperCollider's own
+// bundled sound, so the tour works before you have collected anything.
 //
-// Usage:  q[\tour].value;            // the full walk, posts what it is doing
-//         q[\tour].value(\amen);     // on a particular break
-//         q[\stations].value;        // just the three grind stations, held longer
-//         q[\hush].value;            // stop
+// Keys are namespaced `break*` because GamutTour.scd already owns q[\tour],
+// q[\tourGated] and q[\colorWalk]; the tour voice is the proxy ~brk.
+//
+// Usage:  q[\breakTour].value;            // the full walk, posts what it is doing
+//         q[\breakTour].value(\amen);     // on a particular break
+//         q[\breakStations].value;        // just the three grind stations, held longer
+//         q[\breakHush].value;            // stop
 //
 // Everything here is ordinary vocabulary — nothing in this file is private API.
 
@@ -18,7 +22,7 @@ q = q ? ();
 // ---------------------------------------------------------------------------
 // the named regions, as (label -> a function of the voice)
 // ---------------------------------------------------------------------------
-q[\regions] = [
+q[\breakRegions] = [
 	"intact loop — grind 0, repitched to fit"
 		-> { |v| v.grind(0).over(1).vari(1).win(\gate).jit(0).roll(1) },
 	"beat-sized chops — grind 0.25"
@@ -74,20 +78,20 @@ q[\regions] = [
 // ---------------------------------------------------------------------------
 // the walk
 // ---------------------------------------------------------------------------
-q[\tour] = { |key, beats = 8|
+q[\breakTour] = { |key, beats = 8|
 	var voice;
 	if(\Break.asClass.isNil) { "BreakTour: the Synesthesia quark is not loaded".warn };
 	if(Break.size == 0) {
-		"BreakTour: no breaks loaded — see Setup/samples/breaks/README.md, or run q[\\demo]".warn;
+		"BreakTour: no breaks loaded — see Setup/samples/breaks/README.md, or run q[\\breakDemo]".warn;
 	} {
-		~tour.brk(key ?? { Break.keyAt(0) });
-		~tour.play;
-		voice = ~tour;
-		("BreakTour: " ++ q[\regions].size ++ " regions, " ++ beats
-			++ " beats each, on \"" ++ Break.keyOf(~tour) ++ "\"").postln;
+		~brk.brk(key ?? { Break.keyAt(0) });
+		~brk.play;
+		voice = ~brk;
+		("BreakTour: " ++ q[\breakRegions].size ++ " regions, " ++ beats
+			++ " beats each, on \"" ++ Break.keyOf(~brk) ++ "\"").postln;
 		Tdef(\breakTour, {
-			q[\regions].do { |pair, i|
-				("  " ++ (i + 1) ++ "/" ++ q[\regions].size ++ "  " ++ pair.key).postln;
+			q[\breakRegions].do { |pair, i|
+				("  " ++ (i + 1) ++ "/" ++ q[\breakRegions].size ++ "  " ++ pair.key).postln;
 				pair.value.value(voice);
 				beats.wait;
 			};
@@ -97,11 +101,11 @@ q[\tour] = { |key, beats = 8|
 };
 
 // just the three advertised stations, held long enough to judge
-q[\stations] = { |key, beats = 16|
+q[\breakStations] = { |key, beats = 16|
 	var voice;
-	~tour.brk(key ?? { Break.keyAt(0) });
-	~tour.play;
-	voice = ~tour;
+	~brk.brk(key ?? { Break.keyAt(0) });
+	~brk.play;
+	voice = ~brk;
 	Tdef(\breakStations, {
 		[
 			"grind 0.0 — one grain per loop: should sound like the loop, intact"
@@ -119,25 +123,25 @@ q[\stations] = { |key, beats = 16|
 	}).play(p.clock, quant: 4);
 };
 
-q[\hush] = {
+q[\breakHush] = {
 	Tdef(\breakTour).stop;
 	Tdef(\breakStations).stop;
-	~tour.stop(2);
+	~brk.stop(2);
 };
 
 // ---------------------------------------------------------------------------
 // DEMO: build a break with no library, from SuperCollider's own sound
 // ---------------------------------------------------------------------------
-q[\demo] = {
+q[\breakDemo] = {
 	Buffer.read(Server.default,
 		Platform.resourceDir +/+ "sounds/a11wlk01.wav",
 		action: { |b|
 			// not really a drum loop, but it is 2 beats long at 120 bpm
 			var key = Break.capture(\demo, b, 2);
 			("BreakTour: registered \\" ++ key ++ " ("
-				++ b.duration.round(0.01) ++ "s). Try q[\\tour].value(\\"
+				++ b.duration.round(0.01) ++ "s). Try q[\\breakTour].value(\\"
 				++ key ++ ")").postln;
 		});
 };
 
-"BreakTour loaded — q[\\tour].value / q[\\stations].value / q[\\demo].value / q[\\hush].value".postln;
+"BreakTour loaded — q[\\breakTour].value / q[\\breakStations].value / q[\\breakDemo].value / q[\\breakHush].value".postln;
