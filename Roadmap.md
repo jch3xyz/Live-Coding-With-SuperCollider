@@ -137,11 +137,44 @@ NEW instruments, so this precedes it.
       center, grain overlap gain compensation, players' rel→hold rename,
       family-wide LinSelectX drive stages. John: play GamutTour, rename
       voices/axes, report dead zones.
-- [ ] Sample library: deferred by design (synthesized drums; future spoken-word/
-      Alan Watts material for looping/granulation).
+- [x] Sample library: the *breakbeat* half is now built — see Phase 1.6. Still
+      deferred: spoken-word / Alan Watts material for looping and granulation.
 - [ ] Retune Synesthesia drone recipes / defaults once the palette lands.
 - **Done when**: Setup boots the new library with no missing-UGen exceptions and
   Synesthesia words target it end-to-end (compile + boot-log gate).
+
+## Phase 1.6 — Breakbeat machine (BUILT August 2026)
+
+Goal: a whole drum-loop recording as one sculptable voice — locked to the session
+tempo whatever tempo it was recorded at, dissolvable continuously from intact loop
+to granular dust, reorderable live, swappable with no gap. Full design rationale and
+as-built deviations: **"Breaks Build Plan.md"**.
+
+Independent of Phase 2 — it neither blocks nor is blocked by colors.
+
+- [x] `\break` engine + `\brk1` chop player (Setup/SynthDefs/, Tier 0 stock). One
+      Phasor per loop is the single source of phase, so no grid can drift and
+      `resync` realigns everything to the bar. `grind` has exact stations at 0
+      (intact) / 0.5 (clean chops) / 1 (dust).
+- [x] `Break` registry + vocabulary in the Synesthesia quark: tempo inference
+      (filename tag → folder tag → duration heuristic) with a persistent,
+      hand-editable `_breaks.scd` sidecar that can also rename a break; canvas words
+      on NodeProxy, `chop` brush on Symbol. 43 new unit tests (`TestBreak.run`).
+- [x] Verification: `Setup/BreakCheck.scd` — NRT battery, builds its own fixtures,
+      15/15 passing. Proves sample-accurate grid lock from two different source
+      tempos, gapless swap, silent rests, no clipping, self-freeing node.
+- [x] Docs: `Guides/Breaks` tutorial (runs on SC's bundled sound, so it needs no
+      library), `Classes/Break`, words on their home classes, and a holistic rewrite
+      of `Reference/Synesthesia-Reference`.
+- [ ] **Load a break library** — `Setup/samples/breaks/` is empty, waiting on John's
+      collection. `Setup/samples/breaks/README.md` covers naming for inference.
+- [ ] **Calibration by ear** (John, no deadline): play `Setup/BreakTour.scd`; report
+      dead zones in the `grind` curve; rename words that do not sit right; decide
+      whether this becomes a painting-register applicator and what `hue` would mean
+      for a break (the HSV axes are deliberately omitted for now — CONVENTIONS rule 3
+      allows a def to omit an axis it has no meaning for).
+- **Done when**: built and verified — done. The two open boxes are John's, not the
+  build's.
 
 ## Phase 2 — Painting register (≈ 1 week + a calibration week)
 
