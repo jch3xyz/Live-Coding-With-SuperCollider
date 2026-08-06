@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# local Claude Code settings
+.claude/
+
+# large binaries that should not live in git history
+Setup/legacy/samples_set1/
+Help/howto_co34pt_liveCode/
