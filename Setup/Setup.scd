@@ -12,10 +12,14 @@ Tdef.removeAll;
 //Log every evaluation this session (auto-transcript; mine for vocabulary later)
 History.start;
 
-Server.default.options.inDevice_("MacBook Pro Microphone");
-
-Server.default.options.outDevice_("WH-1000XM5");
-
+//Audio devices (this Mac). Verification gates set topEnvironment[\setupGate] = true
+//before loading this file: system default output, no input, no recording file.
+if(topEnvironment[\setupGate] == true) {
+	Server.default.options.inDevice_(nil).outDevice_(nil).numInputBusChannels_(0);
+} {
+	Server.default.options.inDevice_("MacBook Pro Microphone");
+	Server.default.options.outDevice_("WH-1000XM5");
+};
 
 
 //Set the sample rate to match your system
@@ -76,9 +80,12 @@ s.waitForBoot({
 	s.sync;
 
 	//activate StageLimiter - Part of the BatLib quark
+	//No s.freeAll after this: the server was just rebooted, so there is nothing to
+	//free, and freeAll re-creates the default group asynchronously (initTree forks
+	//on AppClock). The returns below were built into a group that didn't exist
+	//yet, and the limiter only survived a 10 ms race. SetupCheck.scd guards this.
 	StageLimiter.activate;
 	s.sync;
-	s.freeAll;
 
 	//Standing FX returns: always present, silent until fed.
 	//Feed by adding sources, e.g. ~verbIn.add({~k.ar * 0.3});
@@ -93,9 +100,12 @@ s.waitForBoot({
 	"Setup done!".postln;
 
 	//Prepare to record and set the file path to save the recording
-	s.prepareForRecord(PathName(setupDir).parentPath +/+ "Recordings/" +/+ "SC_" ++ Date.getDate.format("%y%m%d_%H%M%S") ++ ".wav");
-	s.sync;
-	"Ready to record!".postln;
+	//(skipped for gates: prepareForRecord creates the file on disk)
+	if(topEnvironment[\setupGate] != true) {
+		s.prepareForRecord(PathName(setupDir).parentPath +/+ "Recordings/" +/+ "SC_" ++ Date.getDate.format("%y%m%d_%H%M%S") ++ ".wav");
+		s.sync;
+		"Ready to record!".postln;
+	};
 
 });
 )
