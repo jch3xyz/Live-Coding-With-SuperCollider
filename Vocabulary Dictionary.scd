@@ -401,7 +401,8 @@ rec(16, "voice");                          // into d["voice"]
      ~r = {50};
      ~a = \tone.stack(~r, [1, 2, 4]); ~a.fade(8).play;
      ~a.fx(\lpf, 700).fx(\verb, 0.3);
-     ~k = \kick.deg("0", 1); ~k.play;              // a kick voice, one note per beat
+     ~k = Pbind(\instrument, \kick, \freq, 50, \dur, 1); ~k.play; // one kick per beat
+                                                    // (drums take \freq — .deg would pitch a kick to middle C)
      ~a.duck(~k, 0.6);                              // the kick carves the drone
      ~h = \s.hits("x.xx", 0.25).fast(2); ~h.play;   // (needs a sample folder "s")
      ~m = \mark.deg("0 3 5 [0 2 4]", 0.5).sometimes(0.2, _.fast(4)); ~m.play;
