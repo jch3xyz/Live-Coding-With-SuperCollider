@@ -341,12 +341,11 @@ Goal: perception as control surface. Order chosen so each step reuses the last.
 - **Broadcast's transport is unproven** — SonoBus's per-connection channel ceiling is
   undocumented; test the full stem count on the VJ's machine before a show
   (JackTrip is the fallback).
-- **Branches**: `breaks-machine` here and `breaks` in the quark carry everything since
-  July; `main` in both repos is still at Phase 1. Merge before Music-Robot starts
-  sending pull requests to the quark (its D9), or they will target a stale `main`.
-
 Resolved: **quark name** (Synesthesia, Phase 0); **ProxyChain vs custom .fx** (slots
-10+ and a recipe registry — ProxyChain wants to own the proxy; Phase 1d).
+10+ and a recipe registry — ProxyChain wants to own the proxy; Phase 1d);
+**unmerged branches** (`breaks-machine` here and `breaks` in the quark were
+fast-forwarded into `main` on 2026-11-09, so Music-Robot's pull requests to the
+quark — its D9 — will target a current `main`).
 
 ## Working practice (any build session, human or Claude)
 
