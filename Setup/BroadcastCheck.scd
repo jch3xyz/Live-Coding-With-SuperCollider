@@ -153,7 +153,9 @@ expectations = [
 	"~m.play" -> { |entries|
 		var notes = entries.select { |e| e[\address] == "/syn/note/ping" };
 		var degrees = notes.collect { |e| e[\args][1].asFloat }.asSet.asArray.sort;
-		var chord = notes.separate { |a, b| a[\time] != b[\time] }.detect { |g| g.size == 3 };
+		// "one instant" to within 2 ms: the stub rounds arrival times to 0.1 ms, and three
+		// messages sent back to back straddle a rounding step about one run in three
+		var chord = notes.separate { |a, b| (b[\time] - a[\time]).abs > 0.002 }.detect { |g| g.size == 3 };
 		[notes.size >= 4 and: { degrees.every { |d| [0, 2, 3, 4, 5].includes(d.asInteger) } }
 			and: { chord.notNil } and: { notes.first[\args].size == 3 },
 			notes.size.asString ++ " × /syn/note/ping [amp degree dur], degrees " ++ degrees
@@ -387,6 +389,11 @@ Routine {
 		barWait.(1);
 		samples.mean
 	};
+	// a warm-up pass first: a freshly created ~n measures about a quarter low on its
+	// first bar whatever Broadcast is doing, and a second pass under the same state
+	// agrees with the other two to within one percent. The comparison is between
+	// Broadcast states, so the voice's own first bar must not be one of the three.
+	measure.value;
 	onLevel = measure.value;
 	Broadcast.stop;
 	Broadcast.start(NetAddr("192.0.2.1", 9000));    // TEST-NET: never routed, never answers

@@ -22,18 +22,41 @@ loaded or started by `Setup/Setup.scd`. The sample library is connected (Phase 1
 ~1,250 drum loops indexed for the breaks machine, and kick/snare/clap/percussion
 one-shots in `d`. The system has still not been played in earnest; calibration by
 ear is John's open work. Phase 2 (painting) was dropped on 2026-08-19. Broadcast is
-on the `broadcast` branches of both repos pending John's review and the
-collaborator's answers to the namespace questions. Phase 3 and 5 are unstarted.
+merged to main in both repos (2026-11-09) and confirmed reaching TouchDesigner on
+this Mac; its OSC names stay open until the collaborator's answers and John's
+naming pass (Phase 4, "Requested"). `Tutorial.scd` at the repo root is the current
+hands-on walkthrough of everything built. Phase 3 and 5 are unstarted.
 Downstream: Music-Robot (`~/Studio/Sketches/Claude Code/Music-Robot`) plays this
 system; its DECISIONS.md D8 is the ruling that dropped Phase 2.
 
-Gates, all green as of 2026-11-09: `TestSynesthesiaParsers.run` + `TestBreak.run`
-+ `TestBroadcast.run` (language, 155 assertions), `check-help.scd` in the quark
-(every help file parses and renders), `Setup/SetupCheck.scd` (boots Setup for real,
-22 checks incl. the library), `Setup/BreakIntegration.scd` (live server, 34),
-`Setup/BreakCheck.scd` (NRT audio), `Setup/BroadcastCheck.scd` (live server plus a
-receiver stub in a second sclang: the manifest's acceptance walkthrough, the event
-timing measurement and the negative test).
+Gates, as of 2026-11-09: `TestSynesthesiaParsers.run` + `TestSynesthesiaGuard.run`
++ `TestBreak.run` + `TestBroadcast.run` (language, 191 assertions), `check-help.scd`
+in the quark (every help file parses and renders), `Setup/SetupCheck.scd` (boots
+Setup for real, 22 checks incl. the library), `Setup/TutorialCheck.scd` (plays
+`Tutorial.scd` top to bottom on a private server: every statement must run, every
+voice must sound and none may clip or lose its start to the JITLib fault below),
+`Setup/BreakIntegration.scd` (live server, 34), `Setup/BreakCheck.scd` (NRT audio),
+`Setup/BroadcastCheck.scd` (live server plus a receiver stub in a second sclang:
+the manifest's acceptance walkthrough, the event timing measurement and the
+negative test; two measurement flakes in the check itself were repaired on
+2026-11-09: the chord-as-one-instant test now allows 2 ms, since the stub rounds
+arrival times to 0.1 ms, and the three-state house-level comparison now follows a
+warm-up pass, since a freshly created voice measures a quarter low on its first bar
+under any Broadcast state). Every gate above was rerun on 2026-11-09 after the two
+fixes below, each live check on a private server so an open IDE session is never
+touched: all green (BroadcastCheck 39/39 after its repair).
+
+Two faults found by the tutorial check on 2026-11-09, both fixed in the quark:
+(1) `.chord` fed chord names to `\note` as Symbols, where SuperCollider reads
+`\G7` note-first (G, octave 7, about 100 kHz) and silently mangles unknown names
+such as `Abmaj7`; `Synesthesia.parseChords` now resolves names chord-first through
+ChordSymbol2, with chart spellings (`m7`, `maj7`, `m7b5`, `sus4`, `C/E`, `_4` for
+an octave) and a clear error for names it cannot read. (2) SuperCollider 3.13.0's
+`NodeProxy.put` never marks a proxy loaded, so a proxy that is read by another
+proxy and then reassigned inside one bar loses its start ("duplicate node ID",
+reader silent); `Synesthesia.guard(p)` in Setup installs a ProxySpace dispatch
+hook that settles each proxy on assignment. Still present in upstream `develop`;
+not yet reported upstream.
 
 ## Non-negotiable design rules (apply to every phase)
 
@@ -292,6 +315,15 @@ done looks like, not the build order).
       namespace freezes (which streams, native vs normalized values, timetags —
       `timetags: true` already exists for a receiver that honours them — and the
       SonoBus channel ceiling). John's, not the build's.
+- [ ] **Requested by John, 2026-11-09, after first contact with TouchDesigner** (a
+      naming pass comes first; more requests to follow):
+      - `/syn/beat` is a phase over the whole BAR, so rename it `bar`, and add
+        phase streams at 1/2, 1/4, 1/8 and 1/16 notes alongside it.
+      - Found while writing the tutorial, for the same pass: helper proxies stream
+        under generated names (`syn_padx`, `syn_sig1`, `k_env`), and a proxy
+        assigned from one (`~cut = pad(\x).mapExp(...)`) streams twice, with its
+        0..1 twin only on the generated name. A `.brk` voice sends no events
+        (only a stem); hue/sat/val are not in `/syn/note`.
 - **Done when**: the manifest's acceptance walkthrough passes — the Guides/Synesthesia
   "first session" evaluated line by line with a receiver stub listening, every
   sound-making line on the wire with no extra typing — plus its negative test
