@@ -15,21 +15,25 @@ rationale living in its two companion docs:
 
 Owner: John (john@newmedianashville.com). Repo: Live-Coding-With-SuperCollider.
 
-**Current state (2026-11-09):** Phases 0, 1, 1.5 and 1.6 are built and verified —
-the audio language, John's own SynthDef palette, and the breakbeat machine, all
-loaded by `Setup/Setup.scd`. The sample library is connected (Phase 1.6): ~1,250
-drum loops indexed for the breaks machine, and kick/snare/clap/percussion one-shots
-in `d`. The system has still not been played in earnest; calibration by ear is
-John's open work. Phase 2 (painting) was dropped on 2026-08-19. Next build:
-**Broadcast** (Phase 4, specified, not started). Phase 3 and 5 are unstarted.
+**Current state (2026-11-09):** Phases 0, 1, 1.5, 1.6 and 4 are built and verified —
+the audio language, John's own SynthDef palette, the breakbeat machine, and
+Broadcast (events, control values and per-proxy stems to a VJ's machine), all
+loaded or started by `Setup/Setup.scd`. The sample library is connected (Phase 1.6):
+~1,250 drum loops indexed for the breaks machine, and kick/snare/clap/percussion
+one-shots in `d`. The system has still not been played in earnest; calibration by
+ear is John's open work. Phase 2 (painting) was dropped on 2026-08-19. Broadcast is
+on the `broadcast` branches of both repos pending John's review and the
+collaborator's answers to the namespace questions. Phase 3 and 5 are unstarted.
 Downstream: Music-Robot (`~/Studio/Sketches/Claude Code/Music-Robot`) plays this
 system; its DECISIONS.md D8 is the ruling that dropped Phase 2.
 
 Gates, all green as of 2026-11-09: `TestSynesthesiaParsers.run` + `TestBreak.run`
-(language, 90 assertions), `check-help.scd` in the quark (every help file parses
-and renders), `Setup/SetupCheck.scd` (boots Setup for real, 22 checks incl. the
-library), `Setup/BreakIntegration.scd` (live server, 34), `Setup/BreakCheck.scd`
-(NRT audio).
++ `TestBroadcast.run` (language, 155 assertions), `check-help.scd` in the quark
+(every help file parses and renders), `Setup/SetupCheck.scd` (boots Setup for real,
+22 checks incl. the library), `Setup/BreakIntegration.scd` (live server, 34),
+`Setup/BreakCheck.scd` (NRT audio), `Setup/BroadcastCheck.scd` (live server plus a
+receiver stub in a second sclang: the manifest's acceptance walkthrough, the event
+timing measurement and the negative test).
 
 ## Non-negotiable design rules (apply to every phase)
 
@@ -252,7 +256,7 @@ Goal: controls materialize with the signals; hands get continuous surfaces.
 - **Done when**: the Board builds rows for live proxies with two-way-synced sliders,
   and `pad()` words compile and map correctly.
 
-## Phase 4 — Broadcast: everything musical, out to a VJ (specified November 2026)
+## Phase 4 — Broadcast: everything musical, out to a VJ (BUILT November 2026)
 
 Goal: a second machine (a VJ on Resolume/MadMapper, over Ethernet) receives
 everything musically meaningful on the canvas, with **zero words typed mid-set** —
@@ -260,22 +264,40 @@ configured once in Setup, then watching the ProxySpace on its own. Full success
 parameters: **`~/Tools/Synesthesia/Broadcast Manifest.md`** (the manifest says what
 done looks like, not the build order).
 
-- [ ] Events: one OSC message per sounding hit/note from every brush, timed to the
-      audible onset (±10 ms, compensating `s.latency`).
-- [ ] Continuous: every control-rate proxy on its own stable address at ~30 Hz, plus
-      tempo and beat phase; discovered automatically.
-- [ ] Stems: one stereo channel pair per audible proxy (stable index for the session,
+- [x] Events: one OSC message per sounding hit/note from every brush, timed to the
+      audible onset (±10 ms, compensating `s.latency`). Built: the brushes tag their
+      Pbinds, Broadcast wraps the default Event's `play` (so a performer's own
+      `\callback` still runs) and schedules the send on SystemClock by `~latency`;
+      a brush in a stopped proxy sends nothing. Measured against the stub on
+      localhost: the number is in the manifest's as-built note.
+- [x] Continuous: every control-rate proxy on its own stable address at ~30 Hz, plus
+      tempo and beat phase; discovered automatically. Built: one hidden kr proxy
+      running a SendReply, rebuilt quant-aligned when a beat-rate walk finds the set
+      changed; a Spec-normalised twin stream where a Spec is registered (pad, follow,
+      mapExp/mapLin now register one).
+- [x] Stems: one stereo channel pair per audible proxy (stable index for the session,
       follows audibility through `.stop`/`hush`), out through an aggregate device to
-      SonoBus/JackTrip. Main mix always on stem 0.
-- [ ] Setup-time surface only (`Broadcast.start/stop/status`); never breaks the music
-      — every failure degrades to "the VJ gets less", with one warning.
+      SonoBus/JackTrip. Main mix always on stem 0. Built as gain-tracking taps (the
+      manifest's second mechanism; the reason is in the class comment); the main mix
+      is an InFeedback synth at the head of the root node.
+- [x] Setup-time surface only (`Broadcast.start/stop/status`); never breaks the music
+      — every failure degrades to "the VJ gets less", with one warning. The commented
+      `Broadcast.start` line is in `Setup/Setup.scd`.
+- [x] Verification: `TestBroadcast` (pure functions), `Setup/BroadcastReceiver.scd`
+      (the stub, runs in a second sclang on either machine), `Setup/BroadcastCheck.scd`
+      (the acceptance walkthrough read out of the guide itself, timing, stop/play/
+      swap/clear stability, the negative test). Docs: `Classes/Broadcast`, the guide's
+      "Playing with a VJ", a holistic rewrite of the reference.
 - [ ] Settle the manifest's open questions with the collaborator before the OSC
-      namespace freezes (which streams, native vs normalized values, timetags,
-      SonoBus channel ceiling).
+      namespace freezes (which streams, native vs normalized values, timetags —
+      `timetags: true` already exists for a receiver that honours them — and the
+      SonoBus channel ceiling). John's, not the build's.
 - **Done when**: the manifest's acceptance walkthrough passes — the Guides/Synesthesia
   "first session" evaluated line by line with a receiver stub listening, every
   sound-making line on the wire with no extra typing — plus its negative test
-  (unreachable receiver: audio indistinguishable from Broadcast off).
+  (unreachable receiver: audio indistinguishable from Broadcast off). **Done**:
+  `Setup/BroadcastCheck.scd` is that walkthrough and passes headless. The one open
+  box is the collaborator conversation.
 
 What this replaces from the earlier plan: 4a's painting-word OSC (`/paint/...`) is
 moot with Phase 2 dropped, and its analysis taps become Broadcast's continuous and
