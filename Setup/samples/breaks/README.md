@@ -7,6 +7,20 @@ several folders.
 
 Tutorial: SuperCollider help browser → **Guides/Breaks**.
 
+## Most loops live in the sample library, not here
+
+Setup also connects John's sample library at `~/Studio/Assets/Audio Samples/Breaks`
+(the `library` variable at the top of `Setup.scd`). It is far too big to load at
+boot, so `Break.addLibrary` *indexes* it — every loop is known, none is loaded — and
+each loop loads the first time it plays. The library's one-shot packs (kicks,
+snares, claps, percussion) are not loops: the `oneShots` table in `Setup.scd` files
+them into `d` instead (`\k.hits`, `\s.hits`, `\cp.hits`, `\perc.hits`) and keeps
+them out of the breaks index. Adding a new pack of hits to the library means one
+new line in that table.
+
+This folder is still the place for loops that are not part of the library — a
+quick download, a set-specific edit. Everything below applies to both.
+
 ## What to put here
 
 Whole drum-loop recordings — one loop per file. `wav`, `aiff`, `aif`, `flac`

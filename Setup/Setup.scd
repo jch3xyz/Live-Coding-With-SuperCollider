@@ -3,6 +3,28 @@
 (
 var setupDir = thisProcess.nowExecutingPath.dirname;
 
+//The sample library, outside this repo. Mostly drum loops (indexed for the breaks
+//machine below), plus a few packs of single hits, which `oneShots` files into d
+//under the short keys the docs use. Anything not listed in `oneShots` is treated
+//as loops. Setup still boots on a machine without the library; it just skips it.
+var library = "~/Studio/Assets/Audio Samples/Breaks".standardizePath;
+var oneShots = [
+	"k"    -> ["Gems From The Crates/Kicks",
+		"The Drum Broker - International Breaks & Essential Kicks/The Drum Broker - Essential Kicks"],
+	"s"    -> ["Gems From The Crates/Snares"],
+	"cp"   -> ["Gems From The Crates/Claps"],
+	"perc" -> ["Gems From The Crates/Percussion"]
+];
+
+//every audio file in one folder (not its subfolders), as Buffers.
+//includesEqual, NOT includes: Collection:includes tests identity, so
+//["wav"].includes("wav") is false and every folder loaded empty.
+var readFolder = { |path|
+	PathName(path).files
+		.select { |f| ["wav", "aiff", "aif", "flac"].includesEqual(f.extension.toLower) }
+		.collect { |sf| Buffer.read(s, sf.fullPath) }
+};
+
 //free all running processes
 Buffer.freeAll;
 ServerTree.removeAll;
@@ -52,14 +74,21 @@ s.waitForBoot({
 	//No "sets" — the whole library is globally available. Empty is fine.
 	d = Dictionary.new;
 	PathName(setupDir +/+ "samples").folders.do { |folder|
-		d.add(folder.folderName -> folder.files
-			//includesEqual, NOT includes: Collection:includes tests identity, so
-			//["wav"].includes("wav") is false and every folder loaded empty.
-			.select { |f| ["wav", "aiff", "aif", "flac"].includesEqual(f.extension.toLower) }
-			.collect { |sf| Buffer.read(s, sf.fullPath) });
+		d.add(folder.folderName -> readFolder.(folder.fullPath));
+	};
+	//one-shots from the library join any local folder of the same key
+	//(the path is also left in topEnvironment for SetupCheck.scd to verify)
+	topEnvironment[\sampleLibrary] = if(File.exists(library)) { library };
+	if(File.exists(library)) {
+		oneShots.do { |pair|
+			d[pair.key] = (d[pair.key] ? []) ++ pair.value.collect { |sub|
+				readFolder.(library +/+ sub)
+			}.flatten;
+		};
 	};
 	s.sync;
-	("Samples: " ++ d.size ++ " folder(s) loaded").postln;
+	("Samples: " ++ d.size ++ " key(s) — "
+		++ d.keys.asArray.sort.collect { |k| k ++ "[" ++ d[k].size ++ "]" }.join(" ")).postln;
 
 	//Load every SynthDef file in Setup/SynthDefs/ (one def per file;
 	//see SynthDefs/CONVENTIONS.md for how to write one)
@@ -72,6 +101,16 @@ s.waitForBoot({
 	//boots if the Synesthesia quark is not installed.
 	if(\Break.asClass.notNil) {
 		\Break.asClass.scan(setupDir +/+ "samples");
+		//Then the library: indexed, not loaded (each loop loads the first time it
+		//plays). The one-shot folders filed into d above are skipped by their own
+		//name (fileName: the last path segment — folderName would be the PARENT's),
+		//so the oneShots table is the only list to keep up to date.
+		if(File.exists(library)) {
+			\Break.asClass.addLibrary(library,
+				exclude: oneShots.collect(_.value).flatten.collect { |sub|
+					PathName(library +/+ sub).fileName
+				});
+		};
 		s.sync;
 	};
 
