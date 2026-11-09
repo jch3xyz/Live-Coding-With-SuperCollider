@@ -4,15 +4,32 @@ Handoff document. Self-contained enough to start a build session from, with desi
 rationale living in its two companion docs:
 
 - **"Design Notes.md"** — the core quark: language thesis, registers, vocabulary
-  buckets, auto-GUI/Board, visuals painting-protocol design.
+  buckets, auto-GUI/Board, visuals painting-protocol design (the painting parts are
+  now history — see Phase 2).
 - **"Companion Quarks.md"** — perception quarks (MediaPipe, emotion, pose, etc.).
 - **"Vocabulary Sketch.scd"** — what using the language should look like (design
-  fiction; Phase 1–2 make it real).
+  fiction; Phase 1 made the engineering register real).
+- **"Breaks Build Plan.md"** — the breakbeat machine (Phase 1.6), design and as-built.
+- **`~/Tools/Synesthesia/Broadcast Manifest.md`** — success parameters for Broadcast,
+  which now stands where Phase 4 did.
 
 Owner: John (john@newmedianashville.com). Repo: Live-Coding-With-SuperCollider.
-Current state: co34pt-style ProxySpace setup (Setup/Setup.scd, 18 SynthDefs, sample
-dict `d`, ddwSnippets, StageLimiter, timestamped recording). Design phase complete;
-nothing below is built yet.
+
+**Current state (2026-11-09):** Phases 0, 1, 1.5 and 1.6 are built and verified —
+the audio language, John's own SynthDef palette, and the breakbeat machine, all
+loaded by `Setup/Setup.scd`. The sample library is connected (Phase 1.6): ~1,250
+drum loops indexed for the breaks machine, and kick/snare/clap/percussion one-shots
+in `d`. The system has still not been played in earnest; calibration by ear is
+John's open work. Phase 2 (painting) was dropped on 2026-08-19. Next build:
+**Broadcast** (Phase 4, specified, not started). Phase 3 and 5 are unstarted.
+Downstream: Music-Robot (`~/Studio/Sketches/Claude Code/Music-Robot`) plays this
+system; its DECISIONS.md D8 is the ruling that dropped Phase 2.
+
+Gates, all green as of 2026-11-09: `TestSynesthesiaParsers.run` + `TestBreak.run`
+(language, 90 assertions), `check-help.scd` in the quark (every help file parses
+and renders), `Setup/SetupCheck.scd` (boots Setup for real, 22 checks incl. the
+library), `Setup/BreakIntegration.scd` (live server, 34), `Setup/BreakCheck.scd`
+(NRT audio).
 
 ## Non-negotiable design rules (apply to every phase)
 
@@ -34,8 +51,13 @@ nothing below is built yet.
 Audio first (Phases 0–2) because the instrument must be playable before it is
 visible; visuals (Phase 4) consume the language, so the language must exist; advanced
 interactivity (Phase 5) consumes both. Phase 3 (Board/gesture) sits between because
-its named-controls audit is a prerequisite for clean preset-morphing (used by color
-mixing) and for everything CV eventually drives.
+its named-controls audit is a prerequisite for clean preset-morphing and for
+everything CV eventually drives.
+
+Revised 2026-11-09: Phase 2 is dropped, so the audio language is complete at
+Phase 1 + 1.6. Phase 4 is now Broadcast, which needs only what Phase 1 already
+provides (Pbind events, named controls, one bus per proxy) — so it no longer waits
+on Phase 3, and is the next build.
 
 ---
 
@@ -166,8 +188,18 @@ Independent of Phase 2 — it neither blocks nor is blocked by colors.
 - [x] Docs: `Guides/Breaks` tutorial (runs on SC's bundled sound, so it needs no
       library), `Classes/Break`, words on their home classes, and a holistic rewrite
       of `Reference/Synesthesia-Reference`.
-- [ ] **Load a break library** — `Setup/samples/breaks/` is empty, waiting on John's
-      collection. `Setup/samples/breaks/README.md` covers naming for inference.
+- [x] **Break library connected** (2026-11-09) — John's collection at
+      `~/Studio/Assets/Audio Samples/Breaks` (7 packs, ~2.7 h of audio). Too big to
+      load at boot, so `Break.addLibrary` (new in the quark) *indexes* it — 1,253
+      loops, header reads only, ~0.4 s — and each loop loads the first time it plays
+      (~50 ms, hidden behind the bar-quantised swap; `Break.preload` for set
+      openers). Folders of one-shots are not loops: Setup's `oneShots` table files
+      them into `d` (`k` 83, `s` 52, `cp` 31, `perc` 20 — so `\k.hits` has real
+      kicks) and the same table excludes them from the breaks index; `Chops`/`CHOPS`
+      folders are skipped by default. `Break.list("…")` searches; `brk` suggests on
+      a near miss. `SetupCheck.scd` verifies the whole path on a live server.
+      Inference: 445 tempos read from filename tags, 796 from duration (worth a
+      listen), 5 still fall back to 120 bpm (`Break.list` shows `fallback`).
 - [ ] **Calibration by ear** (John, no deadline): play `Setup/BreakTour.scd`; report
       dead zones in the `grind` curve; rename words that do not sit right; decide
       whether this becomes a painting-register applicator and what `hue` would mean
@@ -176,9 +208,16 @@ Independent of Phase 2 — it neither blocks nor is blocked by colors.
 - **Done when**: built and verified — done. The two open boxes are John's, not the
   build's.
 
-## Phase 2 — Painting register (≈ 1 week + a calibration week)
+## Phase 2 — Painting register — DROPPED 2026-08-19
 
-Goal: the perceptual layer over Phase 1. Timbre/texture words become colors and tools;
+**Not to be built.** John's ruling (recorded as D8 in Music-Robot's DECISIONS.md): the
+curated painting layer is abandoned, because the flexible layer underneath it —
+originally a stepping stone — is the better language. The palette v1 voices
+(`\mark`, `\brush`, `\spray`, `\wash`) stay as ordinary SynthDefs played through
+Phase 1 words. Kept below as the record of what was planned; nothing in later
+phases may depend on it.
+
+Goal (as planned): the perceptual layer over Phase 1. Timbre/texture words become colors and tools;
 pitch/time stay music-language.
 
 - [ ] Color type: HSV coordinate → synthesis recipe *region* (hue = spectral family,
@@ -200,21 +239,52 @@ pitch/time stay music-language.
 
 Goal: controls materialize with the signals; hands get continuous surfaces.
 
-- [ ] Named-controls audit: every Phase 1–2 verb passes rule #2; Spec registry
-      complete.
+- [ ] Named-controls audit: every verb (Phase 1 and the breaks words) passes rule #2;
+      Spec registry complete.
 - [ ] **The Board**: persistent dock window from Setup — row per active proxy (name,
       vol, meter, auto-sliders from named controls), rebuilding on spawn/rebind,
       two-way sync. Study NdefGui/NdefMixer internals first; steal, don't rebuild.
 - [ ] MultiTouchPad quark evaluation on current macOS (private API risk — timebox
       it); if dead, `pad(\x/\y)` + Board sliders suffice.
 - [ ] Optional: KeyState gate words on reserved keys; NdefPreset scene save/morph
-      words (this is where `mix()` infrastructure pays off twice).
+      words (parameter interpolation now lives here alone — Phase 2's `mix()` was
+      going to share it).
 - **Done when**: the Board builds rows for live proxies with two-way-synced sliders,
   and `pad()` words compile and map correctly.
 
-## Phase 4 — Visuals: painting protocol + Processing renderer (≈ 1–2 weeks)
+## Phase 4 — Broadcast: everything musical, out to a VJ (specified November 2026)
 
-Goal: visuals that generate themselves; one utterance, two renderers.
+Goal: a second machine (a VJ on Resolume/MadMapper, over Ethernet) receives
+everything musically meaningful on the canvas, with **zero words typed mid-set** —
+configured once in Setup, then watching the ProxySpace on its own. Full success
+parameters: **`~/Tools/Synesthesia/Broadcast Manifest.md`** (the manifest says what
+done looks like, not the build order).
+
+- [ ] Events: one OSC message per sounding hit/note from every brush, timed to the
+      audible onset (±10 ms, compensating `s.latency`).
+- [ ] Continuous: every control-rate proxy on its own stable address at ~30 Hz, plus
+      tempo and beat phase; discovered automatically.
+- [ ] Stems: one stereo channel pair per audible proxy (stable index for the session,
+      follows audibility through `.stop`/`hush`), out through an aggregate device to
+      SonoBus/JackTrip. Main mix always on stem 0.
+- [ ] Setup-time surface only (`Broadcast.start/stop/status`); never breaks the music
+      — every failure degrades to "the VJ gets less", with one warning.
+- [ ] Settle the manifest's open questions with the collaborator before the OSC
+      namespace freezes (which streams, native vs normalized values, timetags,
+      SonoBus channel ceiling).
+- **Done when**: the manifest's acceptance walkthrough passes — the Guides/Synesthesia
+  "first session" evaluated line by line with a receiver stub listening, every
+  sound-making line on the wire with no extra typing — plus its negative test
+  (unreachable receiver: audio indistinguishable from Broadcast off).
+
+What this replaces from the earlier plan: 4a's painting-word OSC (`/paint/...`) is
+moot with Phase 2 dropped, and its analysis taps become Broadcast's continuous and
+stem streams. 4b–4c (a Processing renderer on this machine) are not part of
+Broadcast, which puts visual generation on the receiving machine; whether a local
+renderer is still wanted for shows without a VJ is open. The earlier items are kept
+below for reference.
+
+### Superseded plan (painting protocol + Processing renderer)
 
 - [ ] 4a. SC side: painting words emit semantic OSC as they execute
       (`/paint/spray [id, hsv, params]`, plus lifecycle: `/paint/scrape`, `/paint/hush`);
@@ -257,17 +327,26 @@ Goal: perception as control surface. Order chosen so each step reuses the last.
 
 ## Risks / open questions
 
-- **Quark name** — undecided; blocks Phase 0 class files. Low effort, do first.
 - **MultiTouchPad** uses a private macOS API — may be dead on current OS; timebox the
   evaluation (Phase 3), fallback is fine.
 - **MediaPipe Python packaging** — wheel availability on new macOS/Python versions;
   bootstrap script must pin versions (Phase 5a).
 - **SC IDE limits** — no inline widgets (Board is a window, not in-code sliders);
   KeyState words conflict with typing (reserved keys only).
-- **ProxyChain vs custom .fx** — decide by studying ProxyChain first (Phase 1d);
-  wrapping beats reinventing unless it fights the vocabulary.
-- **Scope creep** — Phases 2–5 are each optional layers on a playable Phase 1.
+- **Scope creep** — Phases 3–5 are each optional layers on a playable Phase 1.
   If momentum stalls, ship Phase 1 and play it.
+- **The sample library lives outside the repo** (`library` in Setup.scd, an absolute
+  path on this Mac). Setup skips it cleanly where it is absent — another machine, or
+  Music-Robot's Pi — but then `hits` and `brk` have nothing to play there.
+- **Broadcast's transport is unproven** — SonoBus's per-connection channel ceiling is
+  undocumented; test the full stem count on the VJ's machine before a show
+  (JackTrip is the fallback).
+- **Branches**: `breaks-machine` here and `breaks` in the quark carry everything since
+  July; `main` in both repos is still at Phase 1. Merge before Music-Robot starts
+  sending pull requests to the quark (its D9), or they will target a stale `main`.
+
+Resolved: **quark name** (Synesthesia, Phase 0); **ProxyChain vs custom .fx** (slots
+10+ and a recipe registry — ProxyChain wants to own the proxy; Phase 1d).
 
 ## Working practice (any build session, human or Claude)
 

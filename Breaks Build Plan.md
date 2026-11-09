@@ -3,8 +3,10 @@
 Status: **BUILT August 2026.** Designed, implemented and reviewed in one session.
 Verified headless by three gates — 75 language-side assertions (`TestBreak.run`),
 20 NRT audio measurements (`Setup/BreakCheck.scd`), 34 live-server checks
-(`Setup/BreakIntegration.scd`) — all green. **Not yet played:** there is no break
-library loaded, so calibration by ear is the outstanding work.
+(`Setup/BreakIntegration.scd`) — all green. **Not yet played.** Calibration by ear
+is the outstanding work, and since 2026-11-09 there is a library to do it with:
+John's collection is indexed by `Break.addLibrary` at boot (1,253 loops, each
+loaded on first use) — see Roadmap Phase 1.6.
 Owner: John. Companion docs: "Design Notes.md" (language thesis), "Roadmap.md"
 (build pipeline), Setup/SynthDefs/CONVENTIONS.md (def contract).
 

@@ -139,6 +139,10 @@ extensions). All forms return plain SC objects; raw SC composes anywhere.
 
 ### Register design: perceptual words over engineering words (brainstorm, July 2026)
 
+> **2026-11-09:** the painting register this section argues for was dropped on
+> 2026-08-19 (Music-Robot DECISIONS D8). The engineering register built in Phase 1
+> turned out to be the better language. Kept as the reasoning of record.
+
 Tension: systems vs computer-audio vs music vs painting language. Resolution principle:
 **use each domain's language where that domain is how the thing is actually
 perceived.** Timbre is perceived, not computed → perceptual/painting words. Rhythm is
@@ -439,6 +443,14 @@ Three tap points, in order of increasing semantic richness:
 3. **Event/pattern layer** — mirror every Pbind event over OSC (e.g. `\callback` key
    in the default event type, added once in a house style or snippet). Full
    semantics: instrument, degree, dur, amp — things audio analysis can't recover.
+
+> **2026-11-09:** both the painting register and this protocol are history. The
+> painting layer was dropped on 2026-08-19 (Music-Robot DECISIONS D8: the flexible
+> layer is the language), and visuals now go out as **Broadcast** — events, control
+> values and per-proxy stems streamed to a VJ machine, with visual generation on
+> that machine (`~/Tools/Synesthesia/Broadcast Manifest.md`; Roadmap Phase 4). The
+> three tap points above survive almost unchanged as Broadcast's three streams. The
+> text below is kept as the record of the July design.
 
 **The painting protocol (July 2026 — supersedes analysis-only visuals):** the painting
 register doubles as the visual system's wire format. Every painting word (`spray`,
