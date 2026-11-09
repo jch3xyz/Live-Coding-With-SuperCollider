@@ -66,7 +66,10 @@ Routine {
 
 	"=== SetupCheck: booting Setup.scd ===".postln;
 	ready = waitFor.({ p.notNil and: { p.envir[\delay].notNil } }, 60);
-	1.wait;
+	// p.quant = 4 means every proxy's synth starts on the NEXT BAR, not when .play
+	// runs. A fixed 1-second wait raced that: it passed when boot happened to finish
+	// late in a bar and failed (returns "not running") when it finished early.
+	(p.clock.timeToNextBeat(p.quant.asArray[0] ? 4) / p.clock.tempo + 0.5).wait;
 	s.sync;
 	s.volume.mute;
 
