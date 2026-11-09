@@ -35,9 +35,14 @@ Tdef.removeAll;
 History.start;
 
 //Audio devices (this Mac). Verification gates set topEnvironment[\setupGate] = true
-//before loading this file: system default output, no input, no recording file.
+//before loading this file: system default devices, no input channels, no recording
+//file. A gate may name devices in topEnvironment[\setupDevice] — [input, output], or
+//one name for the output — because the server needs both at one sample rate, and a
+//Bluetooth headset as the system default opens at 16 kHz.
 if(topEnvironment[\setupGate] == true) {
-	Server.default.options.inDevice_(nil).outDevice_(nil).numInputBusChannels_(0);
+	var devices = topEnvironment[\setupDevice] ? [nil, nil];
+	if(devices.isString) { devices = [nil, devices] };
+	Server.default.options.inDevice_(devices[0]).outDevice_(devices[1]).numInputBusChannels_(0);
 } {
 	Server.default.options.inDevice_("MacBook Pro Microphone");
 	Server.default.options.outDevice_("WH-1000XM5");
@@ -52,12 +57,8 @@ s.options.numBuffers = 1024 * 16;
 s.options.memSize = 8192 * 64;
 //boot the server
 s.reboot;
-//start proxyspace
+//start proxyspace (the tempo clock is made inside waitForBoot below — see there)
 p=ProxySpace.push(s);
-//start tempo clock
-p.makeTempoClock;
-//give proxyspace a tempo
-p.clock.tempo = 2;
 //Set a global fade time
 p.fadeTime = 4;
 //Rebinds land on the next bar (set to 0 to disable)
@@ -69,6 +70,15 @@ ProxyMixer.new(p);
 
 //Load the samples, synthdefs, and snippets
 s.waitForBoot({
+	//start tempo clock — AFTER the boot, not before it. The clock's ~tempo proxy
+	//takes a control bus, and the server rebuilds its bus allocators when the boot
+	//completes (on the clientID confirmation), so a bus taken before that is handed
+	//out again: the first control proxy of the session (~r = { 55 }) landed on the
+	//same bus as ~tempo and read back wrong. Found by BroadcastCheck.scd, 2026-11-09.
+	//The tempo goes in as the argument: p.quant is already 4 here, so the ~tempo
+	//synth starts on the next bar, and a tempo set in between would be overridden by
+	//the synth's own starting value (1.0) when it lands.
+	p.makeTempoClock(2);
 	3.wait;
 	//Load samples: every folder inside Setup/samples/ becomes a key in d.
 	//No "sets" — the whole library is globally available. Empty is fine.
@@ -136,6 +146,19 @@ s.waitForBoot({
 	~delay = {CombC.ar(~delayIn.ar, 2, 3/(4*p.clock.tempo), 4)};
 	~delay.play;
 	s.sync;
+
+	//Broadcast: stream events, control values and per-proxy stems to a VJ's machine
+	//(Synesthesia quark, Classes/Broadcast). Setup-time only: nothing is typed for it
+	//mid-set. The address is the VJ machine's IP on the Ethernet link and the OSC port
+	//its software listens on (Resolume: Preferences > OSC; MadMapper: Preferences >
+	//OSC) — agree it with the collaborator before the show. Stems need the server
+	//booted on an aggregate device (interface + BlackHole 16ch) with
+	//numOutputBusChannels >= 18; without one, Broadcast warns once and sends the OSC
+	//streams only. Test with Setup/BroadcastReceiver.scd in a second sclang first:
+	//  Broadcast.start(NetAddr("127.0.0.1", 57130));
+	//Broadcast.start(NetAddr("192.168.1.20", 9000));
+	//Broadcast.start(NetAddr("192.168.1.20", 9000), stems: false, rate: 20);   // after a rehearsal
+
 	"Setup done!".postln;
 
 	//Prepare to record and set the file path to save the recording
