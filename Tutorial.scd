@@ -366,3 +366,66 @@ Broadcast.stop;
 rec(8);
 ~g = \live.hits("x...x.x.", inst: \bplaym);   // \bplaym: captures are mono
 ~g.play;
+
+
+/* ============================================================================
+   LESSON 14 — PAINTING: colours and tools
+   The painting register says the same things in a painter's words. A colour is
+   hue / sat / val (the axes every voice in Setup/SynthDefs speaks) plus a spread,
+   and the tubes are named after the screen colour wheel: Paint.colors. A tool is
+   one voice applied in time: brush mark dab drip spray wash. Pigment × applicator:
+   \orange.brush("Cm7 G7"). Pitch and time stay music words. Every stroke is a
+   plain Pbind and every move a Pbindf, so you can drop the register any time.
+   Tutorial-Paint.scd is the long version: every way to use the register.
+============================================================================ */
+
+Broadcast.start(NetAddr("127.0.0.1", 10000));   // lesson 12 stopped it; the VJ is back
+~r = { 55 };                                     // the root again, for the beds below
+
+Paint.colors.postln;                             // the tubes
+
+~pad = \orange.brush("Cm7 Fm9 Abmaj7 G7", 4, amp: 0.15);
+~pad.play;
+
+// LISTEN the pad from lesson 5, now orange: the warm, saw end of the brush's wheel.
+// WATCH  /syn/paint/brush  amp pitch dur hue sat val — four per chord, hue near 0.08.
+//        The colour's coordinates are its screen colour: draw them as they arrive.
+
+~pad = \orange.brush("Cm7 Fm9 Abmaj7 G7", 4, amp: 0.15).darker(0.3);
+
+// LISTEN the same chords with the filter closing: darker is a move on val.
+
+~pad.cooler(0.2);                                // move the running proxy: hue toward blue
+~pad.paler;                                      // and toward grey
+
+// WATCH  hue and sat change in /syn/paint/brush on the next bar.
+
+~m = \blue.mark("0 3 5 7", 0.25, amp: 0.2);
+~m.play;
+
+~t = \red.dab("x..x", 0.5, amp: 0.3);           // rhythmic touches on one note
+~t.play;
+
+~dr = \violet.drip(2, "0 3 5 7", amp: 0.2);     // sparse touches, random timing and notes
+~dr.play;
+
+// WATCH  /syn/paint/mark, /syn/paint/dab, /syn/paint/drip — drip arrives irregularly.
+
+~bed = \grey.wash(~r, amp: 0.15);                // a bed at the root
+~bed.fade(4).play;
+
+~cloud = \cyan.spray(~r, dens: 25, amp: 0.15);  // a grain cloud at the root
+~cloud.fade(4).play;
+
+// LISTEN wash and spray both sit on ~r: move the root and both follow.
+// WATCH  /syn/paint/wash every 16 beats and /syn/paint/spray every 4.
+
+~bed = \grey.mix(\blue, 0.5).wash(~r, amp: 0.15);   // a pigment between two tubes
+
+~k = \k.hits("x.x.").paint(\red);                // a colour on an engineering word:
+~k.play;                                         // the sample player ignores it, harmlessly
+
+// Drop the register: a stroke is a Pbind like any other.
+~m = \blue.mark("0 3 5 7", 0.25, amp: 0.2).fast(2).jux(_.slow(2));
+
+// When you are done, end the set as lesson 12 did: hush(8), then Broadcast.stop.

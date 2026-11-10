@@ -15,26 +15,35 @@ rationale living in its two companion docs:
 
 Owner: John (john@newmedianashville.com). Repo: Live-Coding-With-SuperCollider.
 
-**Current state (2026-11-09):** Phases 0, 1, 1.5, 1.6 and 4 are built and verified —
-the audio language, John's own SynthDef palette, the breakbeat machine, and
-Broadcast (events, control values and per-proxy stems to a VJ's machine), all
-loaded or started by `Setup/Setup.scd`. The sample library is connected (Phase 1.6):
-~1,250 drum loops indexed for the breaks machine, and kick/snare/clap/percussion
-one-shots in `d`. The system has still not been played in earnest; calibration by
-ear is John's open work. Phase 2 (painting) was dropped on 2026-08-19. Broadcast is
-merged to main in both repos (2026-11-09) and confirmed reaching TouchDesigner on
-this Mac; its OSC names stay open until the collaborator's answers and John's
-naming pass (Phase 4, "Requested"). `Tutorial.scd` at the repo root is the current
-hands-on walkthrough of everything built. Phase 3 and 5 are unstarted.
-Downstream: Music-Robot (`~/Studio/Sketches/Claude Code/Music-Robot`) plays this
-system; its DECISIONS.md D8 is the ruling that dropped Phase 2.
+**Current state (2026-11-10):** Phases 0, 1, 1.5, 1.6, 2 and 4 are built and
+verified — the audio language, John's own SynthDef palette, the breakbeat machine,
+the painting register (colours and tools over the audio words, as the `Paint` class
+in the quark), and Broadcast (events, control values and per-proxy stems to a VJ's
+machine), all loaded or started by `Setup/Setup.scd`. The sample library is
+connected (Phase 1.6): ~1,250 drum loops indexed for the breaks machine, and
+kick/snare/clap/percussion one-shots in `d`. The system has still not been played
+in earnest; calibration by ear is John's open work, and for Phase 2 it is the
+whole point: the palette's names and the tools' feel are a first set. Phase 2 was
+dropped on 2026-08-19 and revived by John on 2026-11-10; the canvas ops it listed
+(thin, glaze, bleed, scrape) are not built. Broadcast is merged to main in both
+repos (2026-11-09) and confirmed reaching TouchDesigner on this Mac; its OSC names
+stay open until the collaborator's answers and John's naming pass (Phase 4,
+"Requested"); painted strokes go out on `/syn/paint/<tool>` with their colour.
+`Tutorial.scd` at the repo root is the current hands-on walkthrough of everything
+built, and `Tutorial-Paint.scd` beside it walks the painting register alone, every
+way to use it. Phase 3 and 5 are unstarted. Downstream: Music-Robot
+(`~/Studio/Sketches/Claude Code/Music-Robot`) plays this system; its DECISIONS.md
+D8 was the ruling that dropped Phase 2 and is superseded by the revival — the
+robot may now paint as well as play the open language.
 
-Gates, as of 2026-11-09: `TestSynesthesiaParsers.run` + `TestSynesthesiaGuard.run`
-+ `TestBreak.run` + `TestBroadcast.run` (language, 191 assertions), `check-help.scd`
-in the quark (every help file parses and renders), `Setup/SetupCheck.scd` (boots
+Gates, as of 2026-11-10: `TestSynesthesiaParsers.run` + `TestPaint.run` +
+`TestSynesthesiaGuard.run` + `TestBreak.run` + `TestBroadcast.run` (language, 321
+assertions), `check-help.scd` in the quark (every help file parses and renders),
+`Setup/SetupCheck.scd` (boots
 Setup for real, 22 checks incl. the library), `Setup/TutorialCheck.scd` (plays
-`Tutorial.scd` top to bottom on a private server: every statement must run, every
-voice must sound and none may clip or lose its start to the JITLib fault below),
+`Tutorial.scd` top to bottom on a private server, and `Tutorial-Paint.scd` with
+`SYN_TUTORIAL=Tutorial-Paint.scd`: every statement must run, every voice must
+sound and none may clip or lose its start to the JITLib fault below),
 `Setup/BreakIntegration.scd` (live server, 34), `Setup/BreakCheck.scd` (NRT audio),
 `Setup/BroadcastCheck.scd` (live server plus a receiver stub in a second sclang:
 the manifest's acceptance walkthrough, the event timing measurement and the
@@ -42,9 +51,9 @@ negative test; two measurement flakes in the check itself were repaired on
 2026-11-09: the chord-as-one-instant test now allows 2 ms, since the stub rounds
 arrival times to 0.1 ms, and the three-state house-level comparison now follows a
 warm-up pass, since a freshly created voice measures a quarter low on its first bar
-under any Broadcast state). Every gate above was rerun on 2026-11-09 after the two
-fixes below, each live check on a private server so an open IDE session is never
-touched: all green (BroadcastCheck 39/39 after its repair).
+under any Broadcast state). Every gate above was rerun on 2026-11-10 after the
+painting register landed (and on 2026-11-09 after the two fixes below), each live
+check on a private server so an open IDE session is never touched: all green.
 
 Two faults found by the tutorial check on 2026-11-09, both fixed in the quark:
 (1) `.chord` fed chord names to `\note` as Symbols, where SuperCollider reads
@@ -235,31 +244,51 @@ Independent of Phase 2 — it neither blocks nor is blocked by colors.
 - **Done when**: built and verified — done. The two open boxes are John's, not the
   build's.
 
-## Phase 2 — Painting register — DROPPED 2026-08-19
+## Phase 2 — Painting register (dropped 2026-08-19, REVIVED and BUILT 2026-11-10)
 
-**Not to be built.** John's ruling (recorded as D8 in Music-Robot's DECISIONS.md): the
-curated painting layer is abandoned, because the flexible layer underneath it —
-originally a stepping stone — is the better language. The palette v1 voices
-(`\mark`, `\brush`, `\spray`, `\wash`) stay as ordinary SynthDefs played through
-Phase 1 words. Kept below as the record of what was planned; nothing in later
-phases may depend on it.
+Dropped by John's ruling of August (D8 in Music-Robot's DECISIONS.md: the flexible
+layer underneath is the better language) and revived by John on 2026-11-10, with
+the flexible layer kept as the language it sits on. Built as the `Paint` class in
+the quark plus words on Symbol, Pattern and NodeProxy (`classes/Paint.sc`,
+`classes/extPaint.sc`; help `Classes/Paint`; tests `TestPaint.run`). The grammar is
+the one resolved in July (Design Notes, "Color grammar"): colour = pigment, tool =
+applicator = one voice, pitch/time stay music words, placement is the stroke's.
 
-Goal (as planned): the perceptual layer over Phase 1. Timbre/texture words become colors and tools;
-pitch/time stay music-language.
+Goal: the perceptual layer over Phase 1. Timbre/texture words become colours and
+tools; pitch/time stay music-language.
 
-- [ ] Color type: HSV coordinate → synthesis recipe *region* (hue = spectral family,
-      value = register, saturation = purity↔roughness); sampled-with-variation on
-      each use. Start with ~6 colors over existing SynthDefs.
-- [ ] Tools = applicators mapped to spawner families: `brush` (drone), `spray`
-      (granular), `mark` (pattern), `wash` (bed), `dab` (hit), `drip` (Dust-driven).
-      `tool(color, ...)` returns the same plain objects as Phase 1 words.
-- [ ] Perceptual sculpt verbs: `.darker/.paler/.warmer/.saturate(x)` as moves on
-      named controls.
-- [ ] `mix(colorA, colorB, x)` = parameter interpolation (foundation for Phase 3
-      preset morphing); canvas ops: `thin`, `glaze`, `bleed`, `scrape`.
-- [ ] **Calibration** (John's, on his own schedule): play; rename by ear; kill words
-      that die; harden survivors. The lexicon is discovered, not specified.
-- **Done when**: colors/tools/mix compile and evaluate correctly (build gate);
+- [x] Colour type: a coordinate in the HSV space every voice already speaks (hue =
+      angle on the voice's timbre wheel, sat = hue-identity strength, val = light —
+      CONVENTIONS rule 3), plus a spread; each event samples the tube's
+      neighbourhood. `Paint.color` reads a palette name, `[h, s, v]`, an Event or a
+      `Color`. Eleven tubes named after the screen colour wheel (red … magenta,
+      grey, white, black), because the timbre coordinates are the screen colour.
+- [x] Tools = one voice each, applied in time: `brush` (sustained, `\brush`),
+      `mark` (discrete events, `\mark`), `dab` (rhythmic touches, `\mark`), `drip`
+      (Dust-like touches, `\mark`), `spray` (grain cloud, `\spray` / `\sprayb`),
+      `wash` (bed, `\wash`). `\orange.brush("Cm7 G7")` = `brush(\orange, "Cm7 G7")`;
+      every tool returns a plain Pbind tagged `\syn_brush` / `\syn_material` /
+      `\syn_color`. `Paint.tools` rebinds a tool to any def that speaks the axes.
+- [x] Perceptual sculpt verbs: `.darker` `.lighter` `.paler` `.saturate` `.warmer`
+      `.cooler` (step sizes) and `.paint(colour)`, on patterns (a Pbindf stepping
+      from the carried value or the voice's SynthDesc default) and on proxies (a
+      pattern source is reassigned; a synth source has its `hue`/`sat`/`val`
+      controls moved — drone recipes join by naming them). Warmer/cooler step toward
+      orange/blue the shorter way round the wheel.
+- [x] `mix(a, b, x)` on colours (hue the shorter way round); `Paint.palette[\dusk] =
+      \orange.mix(\violet, 0.6)`. Canvas ops `thin`, `glaze`, `bleed`, `scrape`:
+      **not built** — `feeds` (bleed), `fx` (glaze) and `stop`/`hush` (scrape)
+      already cover the mechanisms; a painter's names for them wait for calibration.
+- [x] Broadcast: every painted stroke goes out on `/syn/paint/<tool>` as amp, pitch
+      (MIDI note), dur, hue, sat, val — the HSV pun on the wire (Phase 4 namespace,
+      one new family; existing addresses untouched).
+- [ ] **Calibration** (John's, on his own schedule): play `Tutorial-Paint.scd`;
+      rename tubes and tools by ear; kill words that die; harden survivors. The
+      lexicon is discovered, not specified. The voices other than `\brush` still
+      carry provisional axis semantics (their file headers say so), so colours on
+      them are cousins of the brush's, not clones — the queue in Design Notes.
+- **Done when**: colours/tools/mix compile and evaluate correctly (build gate —
+  done: `TestPaint` + `TestBroadcast`, and `TutorialCheck` plays lesson 14);
   calibration then refines the lexicon whenever John plays.
 
 ## Phase 3 — The Board + laptop gesture (≈ 1–2 weeks)
@@ -274,8 +303,8 @@ Goal: controls materialize with the signals; hands get continuous surfaces.
 - [ ] MultiTouchPad quark evaluation on current macOS (private API risk — timebox
       it); if dead, `pad(\x/\y)` + Board sliders suffice.
 - [ ] Optional: KeyState gate words on reserved keys; NdefPreset scene save/morph
-      words (parameter interpolation now lives here alone — Phase 2's `mix()` was
-      going to share it).
+      words (parameter interpolation across whole scenes; Phase 2's `mix()` is
+      colour-only and does not need it).
 - **Done when**: the Board builds rows for live proxies with two-way-synced sliders,
   and `pad()` words compile and map correctly.
 

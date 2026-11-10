@@ -1,5 +1,6 @@
-// TutorialCheck — plays ../Tutorial.scd top to bottom on a real server, the way a
-// person would (one statement at a time, at a human pace), and reports per lesson:
+// TutorialCheck — plays ../Tutorial.scd (or the tutorial SYN_TUTORIAL names) top to
+// bottom on a real server, the way a person would (one statement at a time, at a
+// human pace), and reports per lesson:
 //   - any statement that threw an error
 //   - every audible proxy and how loud it measured on the server (peak, dBFS);
 //     anything over 0 dBFS is an OVERLOAD and counts as a failure
@@ -11,15 +12,18 @@
 // Broadcast is pointed back at this sclang (its own langPort) instead of
 // TouchDesigner, so the check can count what TouchDesigner would receive.
 // Skipped: the Setup line (the check loads Setup itself, as a silent gate) and
-// lesson 13 (live sampling needs a microphone).
+// any lesson whose title says "not checked" (live sampling needs a microphone).
 //
 // Usage: evaluate the whole file, or headless:
 //   sclang Setup/TutorialCheck.scd
-// Takes about three minutes. Silent: output is muted.
+//   SYN_TUTORIAL=Tutorial-Paint.scd sclang Setup/TutorialCheck.scd   // another tutorial
+// Takes about four minutes. Silent: output is muted.
 
 (
 var setupDir = thisProcess.nowExecutingPath.dirname;
-var tutorialPath = setupDir +/+ ".." +/+ "Tutorial.scd";
+var tutorialPath = "SYN_TUTORIAL".getenv !? { |rel|
+	if(rel.beginsWith("/")) { rel } { setupDir +/+ ".." +/+ rel }
+} ?? { setupDir +/+ ".." +/+ "Tutorial.scd" };
 var lessons, parse, measure, waitFor, seen, current, failures = 0, report;
 
 waitFor = { |test, timeout = 10|
@@ -129,15 +133,15 @@ thisProcess.addOSCRecvFunc({ |msg|
 });
 
 Routine {
-	"=== TutorialCheck: booting Setup.scd ===".postln;
+	("=== TutorialCheck: " ++ PathName(tutorialPath).fileName ++ ", booting Setup.scd ===").postln;
 	waitFor.({ p.notNil and: { p.envir[\delay].notNil } }, 60);
 	(p.clock.timeToNextBeat(4) / p.clock.tempo + 0.5).wait;
 	s.sync;
 	s.volume.mute;
 
 	lessons.do { |lesson|
-		if(lesson[\num] == 13) {
-			("\n--- LESSON 13 skipped (needs a microphone) ---").postln;
+		if(lesson[\title].contains("not checked")) {
+			("\n--- LESSON " ++ lesson[\num] ++ " skipped (" ++ lesson[\title] ++ ") ---").postln;
 		} {
 			current = lesson[\num];
 			("\n--- LESSON " ++ lesson[\num] ++ " — " ++ lesson[\title] ++ " ---").postln;

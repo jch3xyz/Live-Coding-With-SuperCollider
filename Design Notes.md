@@ -142,6 +142,13 @@ extensions). All forms return plain SC objects; raw SC composes anywhere.
 > **2026-11-09:** the painting register this section argues for was dropped on
 > 2026-08-19 (Music-Robot DECISIONS D8). The engineering register built in Phase 1
 > turned out to be the better language. Kept as the reasoning of record.
+>
+> **2026-11-10:** revived by John and built, over the engineering register rather
+> than instead of it: the `Paint` class in the quark (Roadmap Phase 2, as built).
+> The grammar below ("Color grammar", resolved July 2026) is what was built; the
+> HSV axes are the ones finalized in CONVENTIONS rule 3. What was not built: the
+> canvas ops (thin, glaze, bleed, scrape) and register nudging by value — explicit
+> pitch always wins, and darkness is light alone.
 
 Tension: systems vs computer-audio vs music vs painting language. Resolution principle:
 **use each domain's language where that domain is how the thing is actually

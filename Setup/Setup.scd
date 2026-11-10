@@ -62,6 +62,8 @@ p=ProxySpace.push(s);
 //Guard the space against a JITLib bug (SuperCollider 3.13) that silences a sound for
 //good when a proxy is read and then reassigned inside one bar — see Synesthesia.guard
 Synesthesia.guard(p);
+//Your own tubes of paint go here, for the painting words (\orange.brush, .darker ...):
+//Paint.palette[\rust] = Paint.color(0.05, 0.8, 0.35);
 //Set a global fade time
 p.fadeTime = 4;
 //Rebinds land on the next bar (set to 0 to disable)

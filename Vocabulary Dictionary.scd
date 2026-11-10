@@ -29,7 +29,9 @@
      5. WIRE               feeds route duck
      6. BRIDGE             follow pat mapExp mapLin
      7. TRANSFORM          fast slow sometimes jux
-     8. REFERENCE TABLES   instruments · drone recipes · fx recipes · JITLib verbs
+     8. PAINT              brush mark dab drip spray wash mix ·
+                           paint darker lighter paler saturate warmer cooler
+     9. REFERENCE TABLES   instruments · drone recipes · fx recipes · JITLib verbs
 ============================================================================ */
 
 
@@ -339,7 +341,75 @@ rec(16, "voice");                          // into d["voice"]
 
 
 /* ============================================================================
-   8. REFERENCE TABLES — the material the words name.
+   8. PAINT — the painting register: colours and tools over the words above.
+   A colour is hue / sat / val (0..1, the axes every voice speaks) plus a spread;
+   the Symbol is the tube, the method is the tool, pitch and time stay music words.
+   Every stroke is a plain Pbind; every move is a Pbindf. Class: Paint.
+   Tubes: Paint.colors -> red orange yellow green cyan blue violet magenta grey
+   white black. Your own: Paint.palette[\rust] = Paint.color(0.05, 0.8, 0.35).
+============================================================================ */
+
+// ---- brush ----------------------------------------------------------------
+// \colour.brush(notes="0", dur=4, amp=0.25, at=0, legato=0.95, oct=5)
+// A sustained, legato stroke on the \brush voice. notes: chord names, degrees or
+// a step string (one note in rhythm). at: pan, patternable.
+// Returns: a Pbind, tagged \syn_brush \syn_material \syn_color.
+~pad = \orange.brush("Cm7 Fm9 Abmaj7 G7", 4);
+~pad = brush(\orange, "Cm7 Fm9 Abmaj7 G7", 4);      // the same expression
+
+// ---- mark -----------------------------------------------------------------
+// \colour.mark(notes="0", dur=0.25, amp=0.3, at=0, oct=5)
+// Discrete pitched events on the \mark voice.
+~m = \blue.mark("0 3 5 7", 0.25);
+
+// ---- dab ------------------------------------------------------------------
+// \colour.dab(steps="x...", step=1, amp=0.4, at=0, oct=5)
+// Rhythmic touches on one note (\mark); a touch per bar by default.
+~t = \red.dab("x..x", 0.5);
+
+// ---- drip -----------------------------------------------------------------
+// \colour.drip(rate=1, notes="0", amp=0.3, at=0, oct=5)
+// Sparse stochastic touches (\mark): Dust-like timing at `rate` per beat, notes
+// drawn at random from the set.
+~dr = \violet.drip(2, "0 3 5 7");
+
+// ---- spray ----------------------------------------------------------------
+// \colour.spray(root, dens=18, dur=4, amp=0.3, at=0, buf, size)
+// A grain cloud at the root (\spray), or over a buffer (\sprayb; buf = a Buffer or
+// a folder name in d, its latest capture). root: a frequency, a control proxy
+// followed live, a pattern, or nothing -> ~r.
+~cloud = \cyan.spray(~r, dens: 25);
+rec(8); ~g = \grey.spray(buf: \live);
+
+// ---- wash -----------------------------------------------------------------
+// \colour.wash(root, dur=16, amp=0.25, at=0)
+// A texture bed at the root (\wash).
+~bed = \grey.wash(~r);  ~bed.fade(8).play;
+
+// ---- mix ------------------------------------------------------------------
+// \colour.mix(other, x=0.5)
+// A pigment between two tubes; hue the shorter way round the wheel.
+// Returns: a colour (an Event), usable wherever a colour is.
+~bed = \grey.mix(\blue, 0.4).wash(~r);
+Paint.palette[\dusk] = \orange.mix(\violet, 0.6);
+
+// ---- paint / darker / lighter / paler / saturate / warmer / cooler ---------
+// pattern.darker(x=0.2) .lighter(x=0.2) .paler(x=0.2) .saturate(x=0.2)
+//         .warmer(x=0.1) .cooler(x=0.1) .paint(colour)
+// Moves on a pattern: a new pattern stepping val / sat / hue from the value each
+// event carries (or the voice's default), so they chain. warmer/cooler step toward
+// orange / blue the shorter way round, never past. paint recolours outright.
+// The same words on a proxy move what it holds: a pattern source is reassigned on
+// the grid; a synth source has its hue/sat/val controls moved (drone recipes join
+// by naming \val.kr etc.); a source with no such control warns and does nothing.
+~pad = \orange.brush("Cm7 G7").darker(0.3).paler;
+~pad.cooler;                                        // on the running proxy
+~pad.paint(\violet);
+~k = \k.hits("x.x.").paint(\red);                   // harmless on a voice that speaks no colour
+
+
+/* ============================================================================
+   9. REFERENCE TABLES — the material the words name.
 ============================================================================ */
 
 /*  INSTRUMENTS (SynthDefs in Setup/SynthDefs/) — what you name in deg / chord,
