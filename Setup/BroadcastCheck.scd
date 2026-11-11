@@ -160,10 +160,17 @@ expectations = [
 		var sounding = notes.collect { |e| e[\args].count { |x| x.asFloat > 0 } };
 		var chord = notes.detect { |e| e[\args].count { |x| x.asFloat > 0 } == 3 };
 		var trigs = entries.select { |e| e[\address] == "/syn/note/ping/trig" }.collect { |e| e[\args][0].asInteger };
-		[notes.size >= 4 and: { notes.every { |e| e[\args].size == 8 } } and: { chord.notNil }
-			and: { sounding.count(_ == 1) >= 3 } and: { trigs.count(_ == 1) == notes.size } and: { trigs.count(_ == 0) >= 1 },
-			notes.size.asString ++ " events on /syn/note/ping/notes, 8 slots each, single notes and the bracket chord ("
-			++ (chord !? { chord[\args] }) ++ "), a /trig pulse per event"]
+		// as wide as the widest chord so far: the first message carries no padding,
+		// the bracket chord makes the voice three wide, and it never narrows again.
+		// (Which comes first depends on where the already-running pattern is when
+		// ~m.play makes it heard.)
+		var widths = notes.collect { |e| e[\args].size };
+		[notes.size >= 4 and: { widths.first == sounding.first } and: { widths.maxItem == 3 }
+			and: { widths == widths.copy.sort } and: { chord.notNil } and: { sounding.count(_ == 1) >= 3 }
+			and: { trigs.count(_ == 1) == notes.size } and: { trigs.count(_ == 0) >= 1 },
+			notes.size.asString ++ " events on /syn/note/ping/notes: the first " ++ widths.first
+			++ " wide with no padding, never narrower after, at most " ++ widths.maxItem
+			++ " (the bracket chord " ++ (chord !? { chord[\args] }) ++ "), a /trig pulse per event"]
 	},
 	"pad(\\x).mapExp(200, 8000)" -> { |entries|
 		var sig = lastOf.(entries, "/syn/kr/syn_sig1"), norm = lastOf.(entries, "/syn/krn/syn_sig1");

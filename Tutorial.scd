@@ -136,7 +136,7 @@ grid(4);
 
 // LISTEN a bright, bell-ish line (\mark is the percussive voice).
 // WATCH  /syn/note/mark/trig pulses per event; /notes holds the MIDI notes, lowest
-//        first, in eight slots (a bracket chord fills three); /amp and /dur in seconds.
+//        first (notes1 alone until the bracket chord makes it three wide); /amp; /dur in seconds.
 
 
 /* ============================================================================

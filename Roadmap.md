@@ -40,7 +40,7 @@ D8 was the ruling that dropped Phase 2 and is superseded by the revival — the
 robot may now paint as well as play the open language.
 
 Gates, as of 2026-11-11: `TestSynesthesiaParsers.run` + `TestPaint.run` +
-`TestSynesthesiaGuard.run` + `TestBreak.run` + `TestBroadcast.run` (language, 348
+`TestSynesthesiaGuard.run` + `TestBreak.run` + `TestBroadcast.run` (language, 352
 assertions), `check-help.scd` in the quark (every help file parses and renders),
 `Setup/SetupCheck.scd` (boots
 Setup for real, 22 checks incl. the library), `Setup/TutorialCheck.scd` (plays
@@ -355,7 +355,7 @@ done looks like, not the build order).
         a chord's four notes collapsed to one, and a hit repeating the same amp and
         index never moved a channel. Now `/syn/hit/<folder>/trig`, `/amp`, `/index`,
         `/dur`; `/syn/note/<def>/trig`, `/amp`, `/notes` (the MIDI notes lowest first
-        in eight zero-filled slots), `/dur`; the same plus `/hue`, `/sat`, `/val` under
+        lowest first, padded with 0 only to the voice's widest chord), `/dur`; the same plus `/hue`, `/sat`, `/val` under
         `/syn/paint/<tool>/`. John's second look (2026-11-11) cut `pitch`, `size`,
         `degree`/`degrees` and a rising `count`: a VJ wants a pulse, so `trig` is 1 on
         the onset and 0 after the pulse width (`pulse:` on start, 50 ms, shortened

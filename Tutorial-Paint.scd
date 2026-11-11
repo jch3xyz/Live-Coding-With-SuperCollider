@@ -311,7 +311,7 @@ Paint.stroke(\brush, \green, [\degree, 0, \dur, 4, \amp, 0.15]).postln;   // the
 /* ============================================================================
    LESSON 10 — THE WIRE: what the VJ receives from a stroke
    Every stroke goes out under /syn/paint/<tool>/: a trig pulse, amp, notes (the MIDI
-   notes, lowest first, in eight slots), dur in seconds, hue, sat, val — one value per address.
+   notes, lowest first), dur in seconds, hue, sat, val — one value per address.
 ============================================================================ */
 
 Broadcast.eventMessages(\orange.brush("Cm7", 4).asStream.next(Event.default)).postln;   // four messages, one per note
