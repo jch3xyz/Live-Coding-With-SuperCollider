@@ -28,7 +28,10 @@ dropped on 2026-08-19 and revived by John on 2026-11-10; the canvas ops it liste
 (thin, glaze, bleed, scrape) are not built. Broadcast is merged to main in both
 repos (2026-11-09) and confirmed reaching TouchDesigner on this Mac; its OSC names
 stay open until the collaborator's answers and John's naming pass (Phase 4,
-"Requested"); painted strokes go out on `/syn/paint/<tool>` with their colour.
+"Requested"); painted strokes go out under `/syn/paint/<tool>/` with their colour.
+On 2026-11-11, after John's first look at the wire in TouchDesigner, the whole event
+namespace became one value per address with a per-event `count`, and `/syn/beat`
+became `/syn/bar` with half/quarter/eighth/sixteenth phases beside it.
 `Tutorial.scd` at the repo root is the current hands-on walkthrough of everything
 built, and `Tutorial-Paint.scd` beside it walks the painting register alone, every
 way to use it. Phase 3 and 5 are unstarted. Downstream: Music-Robot
@@ -36,8 +39,8 @@ way to use it. Phase 3 and 5 are unstarted. Downstream: Music-Robot
 D8 was the ruling that dropped Phase 2 and is superseded by the revival — the
 robot may now paint as well as play the open language.
 
-Gates, as of 2026-11-10: `TestSynesthesiaParsers.run` + `TestPaint.run` +
-`TestSynesthesiaGuard.run` + `TestBreak.run` + `TestBroadcast.run` (language, 321
+Gates, as of 2026-11-11: `TestSynesthesiaParsers.run` + `TestPaint.run` +
+`TestSynesthesiaGuard.run` + `TestBreak.run` + `TestBroadcast.run` (language, 351
 assertions), `check-help.scd` in the quark (every help file parses and renders),
 `Setup/SetupCheck.scd` (boots
 Setup for real, 22 checks incl. the library), `Setup/TutorialCheck.scd` (plays
@@ -51,9 +54,10 @@ negative test; two measurement flakes in the check itself were repaired on
 2026-11-09: the chord-as-one-instant test now allows 2 ms, since the stub rounds
 arrival times to 0.1 ms, and the three-state house-level comparison now follows a
 warm-up pass, since a freshly created voice measures a quarter low on its first bar
-under any Broadcast state). Every gate above was rerun on 2026-11-10 after the
-painting register landed (and on 2026-11-09 after the two fixes below), each live
-check on a private server so an open IDE session is never touched: all green.
+under any Broadcast state). Every gate above was rerun on 2026-11-11 after the wire
+was reshaped (and on 2026-11-10 after the painting register, 2026-11-09 after the
+two fixes below), each live check on a private server so an open IDE session is
+never touched: all green.
 
 Two faults found by the tutorial check on 2026-11-09, both fixed in the quark:
 (1) `.chord` fed chord names to `\note` as Symbols, where SuperCollider reads
@@ -279,9 +283,9 @@ tools; pitch/time stay music-language.
       \orange.mix(\violet, 0.6)`. Canvas ops `thin`, `glaze`, `bleed`, `scrape`:
       **not built** — `feeds` (bleed), `fx` (glaze) and `stop`/`hush` (scrape)
       already cover the mechanisms; a painter's names for them wait for calibration.
-- [x] Broadcast: every painted stroke goes out on `/syn/paint/<tool>` as amp, pitch
-      (MIDI note), dur, hue, sat, val — the HSV pun on the wire (Phase 4 namespace,
-      one new family; existing addresses untouched).
+- [x] Broadcast: every painted stroke goes out under `/syn/paint/<tool>/` as amp,
+      pitch, notes, size, dur, hue, sat, val and count, one value per address — the
+      HSV pun on the wire (Phase 4 namespace, one new family).
 - [ ] **Calibration** (John's, on his own schedule): play `Tutorial-Paint.scd`;
       rename tubes and tools by ear; kill words that die; harden survivors. The
       lexicon is discovered, not specified. The voices other than `\brush` still
@@ -344,15 +348,22 @@ done looks like, not the build order).
       namespace freezes (which streams, native vs normalized values, timetags —
       `timetags: true` already exists for a receiver that honours them — and the
       SonoBus channel ceiling). John's, not the build's.
-- [ ] **Requested by John, 2026-11-09, after first contact with TouchDesigner** (a
-      naming pass comes first; more requests to follow):
-      - `/syn/beat` is a phase over the whole BAR, so rename it `bar`, and add
-        phase streams at 1/2, 1/4, 1/8 and 1/16 notes alongside it.
-      - Found while writing the tutorial, for the same pass: helper proxies stream
-        under generated names (`syn_padx`, `syn_sig1`, `k_env`), and a proxy
-        assigned from one (`~cut = pad(\x).mapExp(...)`) streams twice, with its
-        0..1 twin only on the generated name. A `.brk` voice sends no events
-        (only a stem); hue/sat/val are not in `/syn/note`.
+- [x] **Requested by John, 2026-11-09 and 2026-11-11, after first contact with
+      TouchDesigner** — built 2026-11-11:
+      - One value per address. The OSC In CHOP keeps one channel per address and
+        only its last value, so a six-argument message read as `brush1 … brush6`,
+        a chord's four notes collapsed to one, and a hit repeating the same amp and
+        index never moved a channel. Now `/syn/hit/<folder>/amp`, `/index`, `/dur`,
+        `/count`; `/syn/note/<def>/amp`, `/pitch` (lowest MIDI note), `/notes` (all,
+        one message), `/size`, `/degree`, `/degrees`, `/dur`, `/count`; the same plus
+        `/hue`, `/sat`, `/val` under `/syn/paint/<tool>/`. `count` rises per event of a
+        material and is sent last: the trigger a receiver watches.
+      - `/syn/beat` renamed `/syn/bar`; `/syn/half`, `/quarter`, `/eighth` and
+        `/sixteenth` phases beside it, all aligned to the bar (`Broadcast.phases`).
+- [ ] Still open from the same look: helper proxies stream under generated names
+      (`syn_padx`, `syn_sig1`, `k_env`), and a proxy assigned from one
+      (`~cut = pad(\x).mapExp(...)`) streams twice, with its 0..1 twin only on the
+      generated name. A `.brk` voice sends no events (only a stem).
 - **Done when**: the manifest's acceptance walkthrough passes — the Guides/Synesthesia
   "first session" evaluated line by line with a receiver stub listening, every
   sound-making line on the wire with no extra typing — plus its negative test

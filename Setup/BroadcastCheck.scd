@@ -141,25 +141,30 @@ expectations = [
 			"stem " ++ i ++ " and the main mix (stem 0) both carry signal"]
 	},
 	"~k.play" -> { |entries|
-		var n = countOf.(entries, "/syn/hit/k");
-		var one = lastOf.(entries, "/syn/hit/k");
-		[n >= 3 and: { stemIndexOf.(entries, \k).notNil } and: { one[\args].size == 2 },
-			n.asString ++ " × /syn/hit/k [amp index] e.g. " ++ (one !? { one[\args] }) ++ ", stem " ++ stemIndexOf.(entries, \k)]
+		var n = countOf.(entries, "/syn/hit/k/count");
+		var amp = lastOf.(entries, "/syn/hit/k/amp"), index = lastOf.(entries, "/syn/hit/k/index");
+		var counts = entries.select { |e| e[\address] == "/syn/hit/k/count" }.collect { |e| e[\args][0].asInteger };
+		[n >= 3 and: { stemIndexOf.(entries, \k).notNil } and: { amp.notNil } and: { amp[\args].size == 1 }
+			and: { index.notNil } and: { counts == (counts.first..counts.last) },
+			n.asString ++ " hits, each as /syn/hit/k/amp " ++ (amp !? { amp[\args][0] }) ++ ", /index "
+			++ (index !? { index[\args][0] }) ++ ", /dur and /count rising " ++ counts.first ++ ".." ++ counts.last
+			++ ", stem " ++ stemIndexOf.(entries, \k)]
 	},
 	"~a.duck(~k, 0.6)" -> { |entries|
 		var i = stemIndexOf.(readLog.value, \a);
 		[i.notNil and: { stemLevel.(i) > 1e-6 }, "stem " ++ i ++ " still carries ~a"]
 	},
 	"~m.play" -> { |entries|
-		var notes = entries.select { |e| e[\address] == "/syn/note/ping" };
-		var degrees = notes.collect { |e| e[\args][1].asFloat }.asSet.asArray.sort;
-		// "one instant" to within 2 ms: the stub rounds arrival times to 0.1 ms, and three
-		// messages sent back to back straddle a rounding step about one run in three
-		var chord = notes.separate { |a, b| (b[\time] - a[\time]).abs > 0.002 }.detect { |g| g.size == 3 };
+		var notes = entries.select { |e| e[\address] == "/syn/note/ping/notes" };
+		var written = entries.select { |e| e[\address] == "/syn/note/ping/degrees" };
+		var degrees = written.collect { |e| e[\args].collect(_.asFloat) }.flatten.asSet.asArray.sort;
+		var chord = notes.detect { |e| e[\args].size == 3 };
+		var pitch = lastOf.(entries, "/syn/note/ping/pitch");
 		[notes.size >= 4 and: { degrees.every { |d| [0, 2, 3, 4, 5].includes(d.asInteger) } }
-			and: { chord.notNil } and: { notes.first[\args].size == 3 },
-			notes.size.asString ++ " × /syn/note/ping [amp degree dur], degrees " ++ degrees
-			++ ", a 3-note chord as 3 messages at one time"]
+			and: { chord.notNil } and: { pitch.notNil } and: { pitch[\args].size == 1 },
+			notes.size.asString ++ " notes on /syn/note/ping/notes, degrees written " ++ degrees
+			++ ", the bracket chord as one notes message with 3 pitches ("
+			++ (chord !? { chord[\args] }) ++ ")"]
 	},
 	"pad(\\x).mapExp(200, 8000)" -> { |entries|
 		var sig = lastOf.(entries, "/syn/kr/syn_sig1"), norm = lastOf.(entries, "/syn/krn/syn_sig1");
@@ -299,13 +304,13 @@ Routine {
 	mark = readLog.value.size;
 	barWait.(1);
 	check.("no /syn/hit/k after hush: a brush in a stopped proxy sends nothing",
-		countOf.(since.(mark), "/syn/hit/k") == 0, countOf.(since.(mark), "/syn/hit/k").asString ++ " hits");
+		countOf.(since.(mark), "/syn/hit/k/count") == 0, countOf.(since.(mark), "/syn/hit/k/count").asString ++ " hits");
 	check.("the continuous stream keeps flowing (kr proxies are not silenced by hush)",
 		countOf.(since.(mark), "/syn/kr/r") > 10, countOf.(since.(mark), "/syn/kr/r").asString ++ " × /syn/kr/r in a bar");
 	check.("no warnings so far", Broadcast.warnings.isEmpty, Broadcast.warnings.values.asString);
 
 	"".postln;
-	"=== the continuous stream's rate, tempo and beat ===".postln;
+	"=== the continuous stream's rate, tempo and phases ===".postln;
 	mark = readLog.value.size;
 	2.0.wait;
 	entries = since.(mark);
@@ -315,10 +320,15 @@ Routine {
 	check.("/syn/tempo carries the clock in BPM",
 		lastOf.(entries, "/syn/tempo").notNil and: { (lastOf.(entries, "/syn/tempo")[\args][0].asFloat - 120).abs < 0.01 },
 		lastOf.(entries, "/syn/tempo") !? { |e| e[\args][0] });
-	check.("/syn/beat is a 0..1 phase",
-		entries.select { |e| e[\address] == "/syn/beat" }.every { |e| e[\args][0].asFloat.inclusivelyBetween(0, 1) }
-			and: { countOf.(entries, "/syn/beat") > 10 },
-		countOf.(entries, "/syn/beat").asString ++ " values");
+	["bar", "half", "quarter", "eighth", "sixteenth"].do { |name|
+		var address = "/syn/" ++ name;
+		var values = entries.select { |e| e[\address] == address }.collect { |e| e[\args][0].asFloat };
+		check.(address ++ " is a 0..1 phase that moves",
+			values.size > 10 and: { values.every(_.inclusivelyBetween(0, 1)) } and: { (values.maxItem - values.minItem) > 0.5 },
+			values.size.asString ++ " values, " ++ (values.minItem ? "-") ++ ".." ++ (values.maxItem ? "-"));
+	};
+	check.("no /syn/beat any more: the bar phase is called bar", countOf.(entries, "/syn/beat") == 0,
+		countOf.(entries, "/syn/beat").asString ++ " × /syn/beat");
 
 	"".postln;
 	"=== event timing against the stub (the ±10 ms claim) ===".postln;
@@ -334,7 +344,7 @@ Routine {
 	barWait.(2);
 	~t.clear;        // clear, not stop: stop leaves the pattern running unheard, and
 	0.5.wait;        // its callbacks would then outnumber the (rightly unsent) hits
-	hits = since.(mark).select { |e| e[\address] == "/syn/hit/k" };
+	hits = since.(mark).select { |e| e[\address] == "/syn/hit/k/amp" };   // the first message of each hit's burst
 	check.("the user's \\callback ran for every hit", expected.size >= 8, expected.size.asString ++ " callbacks");
 	check.("…and Broadcast still sent every hit", hits.size == expected.size,
 		hits.size.asString ++ " on the wire vs " ++ expected.size ++ " expected");

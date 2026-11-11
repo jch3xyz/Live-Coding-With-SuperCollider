@@ -36,7 +36,7 @@ Paint.palette[\orange].postln;                   // a tube is hue / sat / val / 
 ~pad.play;
 
 // LISTEN orange on the brush: the warm, saw end of its wheel.
-// WATCH  /syn/paint/brush  amp pitch dur hue sat val — four per chord, hue near 0.08.
+// WATCH  /syn/paint/brush/amp, /pitch, /notes (all four), /size, /dur, /hue (near 0.08), /sat, /val, /count.
 
 ~pad = \blue.brush("Cm7 Fm9 Abmaj7 G7", 4, amp: 0.15);
 
@@ -76,7 +76,7 @@ Paint.palette[\orange].postln;                   // a tube is hue / sat / val / 
 ~m = Paint.color(0.1, 0.7, 0.5, 0.3).mark("0 3 5 7", 0.25, amp: 0.2);   // wide spread
 
 // LISTEN every note a different timbre around the same colour.
-// WATCH  /syn/paint/mark: hue varying by ±0.3 per message.
+// WATCH  /syn/paint/mark/hue varying by ±0.3 with every /count.
 
 ~m = brush(\orange, "0 3 5 7", 0.5, amp: 0.15);   // call syntax: the same expression as \orange.brush
 
@@ -128,7 +128,7 @@ Paint.palette[\orange].postln;                   // a tube is hue / sat / val / 
 ~dr = \violet.drip(0.5, "Cm7 G7", amp: 0.2);          // sparse random chords
 
 // LISTEN three colours of the same voice: a line, a figure, rain.
-// WATCH  /syn/paint/mark, /syn/paint/dab, /syn/paint/drip — drip arrives irregularly.
+// WATCH  /syn/paint/mark/count, /syn/paint/dab/count, /syn/paint/drip/count — drip's rises irregularly.
 
 ~m.stop(2); ~t.stop(2); ~dr.stop(2);
 
@@ -148,7 +148,7 @@ Paint.palette[\orange].postln;                   // a tube is hue / sat / val / 
 ~r = { 49 };                                          // move the root: both follow
 
 // LISTEN the bed and the cloud slide down together.
-// WATCH  /syn/kr/r changes; /syn/paint/wash every 16 beats, /syn/paint/spray every 4.
+// WATCH  /syn/kr/r changes; /syn/paint/wash/count every 16 beats, /syn/paint/spray/count every 4.
 
 ~cloud = \cyan.spray(220, dens: 8, size: 0.2, amp: 0.15);            // a fixed root, slow fat grains
 ~cloud = \yellow.spray(Pseq([110, 165, 220], inf), dur: 2, amp: 0.15);   // a root that walks
@@ -219,7 +219,7 @@ rec(8);                                               // 8 beats from the first 
 ~pad.paler;
 ~pad.paint(\green);
 
-// WATCH  hue / sat / val in /syn/paint/brush change at each bar line.
+// WATCH  /syn/paint/brush/hue, /sat and /val change at each bar line.
 
 // A drone recipe that reads \hue and \val as controls:
 Synesthesia.droneRecipes[\lit] = { |root, mult = 1, wob = 0.1, amp = 0.3|
@@ -274,7 +274,7 @@ Paint.tools[\dab] = \kick;                            // a tool over any voice t
 ~t.play;
 
 // LISTEN dab is now the kick: hue is sweep depth, sat body drive, val the click.
-// WATCH  /syn/paint/dab, as before — the wire names the tool, not the voice.
+// WATCH  /syn/paint/dab/…, as before — the wire names the tool, not the voice.
 
 Paint.tools[\dab] = \mark;                            // and back
 
@@ -310,8 +310,8 @@ Paint.stroke(\brush, \green, [\degree, 0, \dur, 4, \amp, 0.15]).postln;   // the
 
 /* ============================================================================
    LESSON 10 — THE WIRE: what the VJ receives from a stroke
-   Every painted note goes out on /syn/paint/<tool> as amp, pitch, dur, hue, sat,
-   val. hue / sat / val are 0..1: feed them straight into an HSV colour.
+   Every stroke goes out under /syn/paint/<tool>/ as amp, pitch (lowest MIDI note),
+   notes, size, dur, hue, sat, val and count — one value per address; count changes per event.
 ============================================================================ */
 
 Broadcast.eventMessages(\orange.brush("Cm7", 4).asStream.next(Event.default)).postln;   // four messages, one per note
@@ -323,7 +323,7 @@ Broadcast.status;
 
 ~pad = Pbindf(\orange.brush("Cm7 Fm9 Abmaj7 G7", 4, amp: 0.15), \hue, Pseq([0, 0.25, 0.5, 0.75], inf));
 
-// WATCH  /syn/paint/brush: hue stepping a quarter turn per chord. On the VJ's side,
+// WATCH  /syn/paint/brush/hue stepping a quarter turn per chord. On the VJ's side,
 //        hue -> colour wheel, sat -> saturation, val -> brightness: one gesture, two renderers.
 
 
