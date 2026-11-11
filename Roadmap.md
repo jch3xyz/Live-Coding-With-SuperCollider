@@ -29,9 +29,9 @@ dropped on 2026-08-19 and revived by John on 2026-11-10; the canvas ops it liste
 repos (2026-11-09) and confirmed reaching TouchDesigner on this Mac; its OSC names
 stay open until the collaborator's answers and John's naming pass (Phase 4,
 "Requested"); painted strokes go out under `/syn/paint/<tool>/` with their colour.
-On 2026-11-11, after John's first look at the wire in TouchDesigner, the whole event
-namespace became one value per address with a per-event `count`, and `/syn/beat`
-became `/syn/bar` with half/quarter/eighth/sixteenth phases beside it.
+On 2026-11-11, after John's first looks at the wire in TouchDesigner, the whole event
+namespace became one value per address with a `trig` pulse per event, and `/syn/beat`
+became the `/syn/bar` phase with half/quarter/eighth/sixteenth pulses beside it.
 `Tutorial.scd` at the repo root is the current hands-on walkthrough of everything
 built, and `Tutorial-Paint.scd` beside it walks the painting register alone, every
 way to use it. Phase 3 and 5 are unstarted. Downstream: Music-Robot
@@ -40,7 +40,7 @@ D8 was the ruling that dropped Phase 2 and is superseded by the revival — the
 robot may now paint as well as play the open language.
 
 Gates, as of 2026-11-11: `TestSynesthesiaParsers.run` + `TestPaint.run` +
-`TestSynesthesiaGuard.run` + `TestBreak.run` + `TestBroadcast.run` (language, 351
+`TestSynesthesiaGuard.run` + `TestBreak.run` + `TestBroadcast.run` (language, 348
 assertions), `check-help.scd` in the quark (every help file parses and renders),
 `Setup/SetupCheck.scd` (boots
 Setup for real, 22 checks incl. the library), `Setup/TutorialCheck.scd` (plays
@@ -353,13 +353,16 @@ done looks like, not the build order).
       - One value per address. The OSC In CHOP keeps one channel per address and
         only its last value, so a six-argument message read as `brush1 … brush6`,
         a chord's four notes collapsed to one, and a hit repeating the same amp and
-        index never moved a channel. Now `/syn/hit/<folder>/amp`, `/index`, `/dur`,
-        `/count`; `/syn/note/<def>/amp`, `/pitch` (lowest MIDI note), `/notes` (all,
-        one message), `/size`, `/degree`, `/degrees`, `/dur`, `/count`; the same plus
-        `/hue`, `/sat`, `/val` under `/syn/paint/<tool>/`. `count` rises per event of a
-        material and is sent last: the trigger a receiver watches.
-      - `/syn/beat` renamed `/syn/bar`; `/syn/half`, `/quarter`, `/eighth` and
-        `/sixteenth` phases beside it, all aligned to the bar (`Broadcast.phases`).
+        index never moved a channel. Now `/syn/hit/<folder>/trig`, `/amp`, `/index`,
+        `/dur`; `/syn/note/<def>/trig`, `/amp`, `/notes` (the MIDI notes lowest first
+        in eight zero-filled slots), `/dur`; the same plus `/hue`, `/sat`, `/val` under
+        `/syn/paint/<tool>/`. John's second look (2026-11-11) cut `pitch`, `size`,
+        `degree`/`degrees` and a rising `count`: a VJ wants a pulse, so `trig` is 1 on
+        the onset and 0 after the pulse width (`pulse:` on start, 50 ms, shortened
+        to half the gap for fast voices), and `dur` is seconds.
+      - `/syn/beat` renamed `/syn/bar` (a phase); `/syn/half`, `/quarter`, `/eighth`
+        and `/sixteenth` are pulses fired from the clock on every boundary of that
+        note value (`Broadcast.phases`, `pulsesAt`).
 - [ ] Still open from the same look: helper proxies stream under generated names
       (`syn_padx`, `syn_sig1`, `k_env`), and a proxy assigned from one
       (`~cut = pad(\x).mapExp(...)`) streams twice, with its 0..1 twin only on the

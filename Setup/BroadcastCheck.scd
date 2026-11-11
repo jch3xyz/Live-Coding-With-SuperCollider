@@ -141,14 +141,15 @@ expectations = [
 			"stem " ++ i ++ " and the main mix (stem 0) both carry signal"]
 	},
 	"~k.play" -> { |entries|
-		var n = countOf.(entries, "/syn/hit/k/count");
+		var trigs = entries.select { |e| e[\address] == "/syn/hit/k/trig" }.collect { |e| e[\args][0].asInteger };
+		var ons = trigs.count(_ == 1), offs = trigs.count(_ == 0);
 		var amp = lastOf.(entries, "/syn/hit/k/amp"), index = lastOf.(entries, "/syn/hit/k/index");
-		var counts = entries.select { |e| e[\address] == "/syn/hit/k/count" }.collect { |e| e[\args][0].asInteger };
-		[n >= 3 and: { stemIndexOf.(entries, \k).notNil } and: { amp.notNil } and: { amp[\args].size == 1 }
-			and: { index.notNil } and: { counts == (counts.first..counts.last) },
-			n.asString ++ " hits, each as /syn/hit/k/amp " ++ (amp !? { amp[\args][0] }) ++ ", /index "
-			++ (index !? { index[\args][0] }) ++ ", /dur and /count rising " ++ counts.first ++ ".." ++ counts.last
-			++ ", stem " ++ stemIndexOf.(entries, \k)]
+		var dur = lastOf.(entries, "/syn/hit/k/dur");
+		[ons >= 3 and: { offs >= (ons - 1) } and: { stemIndexOf.(entries, \k).notNil } and: { amp.notNil }
+			and: { amp[\args].size == 1 } and: { index.notNil } and: { dur.notNil },
+			ons.asString ++ " hits, each a /syn/hit/k/trig pulse (" ++ ons ++ " ups, " ++ offs ++ " downs) with /amp "
+			++ (amp !? { amp[\args][0] }) ++ ", /index " ++ (index !? { index[\args][0] }) ++ ", /dur "
+			++ (dur !? { dur[\args][0] }) ++ " s, stem " ++ stemIndexOf.(entries, \k)]
 	},
 	"~a.duck(~k, 0.6)" -> { |entries|
 		var i = stemIndexOf.(readLog.value, \a);
@@ -156,15 +157,13 @@ expectations = [
 	},
 	"~m.play" -> { |entries|
 		var notes = entries.select { |e| e[\address] == "/syn/note/ping/notes" };
-		var written = entries.select { |e| e[\address] == "/syn/note/ping/degrees" };
-		var degrees = written.collect { |e| e[\args].collect(_.asFloat) }.flatten.asSet.asArray.sort;
-		var chord = notes.detect { |e| e[\args].size == 3 };
-		var pitch = lastOf.(entries, "/syn/note/ping/pitch");
-		[notes.size >= 4 and: { degrees.every { |d| [0, 2, 3, 4, 5].includes(d.asInteger) } }
-			and: { chord.notNil } and: { pitch.notNil } and: { pitch[\args].size == 1 },
-			notes.size.asString ++ " notes on /syn/note/ping/notes, degrees written " ++ degrees
-			++ ", the bracket chord as one notes message with 3 pitches ("
-			++ (chord !? { chord[\args] }) ++ ")"]
+		var sounding = notes.collect { |e| e[\args].count { |x| x.asFloat > 0 } };
+		var chord = notes.detect { |e| e[\args].count { |x| x.asFloat > 0 } == 3 };
+		var trigs = entries.select { |e| e[\address] == "/syn/note/ping/trig" }.collect { |e| e[\args][0].asInteger };
+		[notes.size >= 4 and: { notes.every { |e| e[\args].size == 8 } } and: { chord.notNil }
+			and: { sounding.count(_ == 1) >= 3 } and: { trigs.count(_ == 1) == notes.size } and: { trigs.count(_ == 0) >= 1 },
+			notes.size.asString ++ " events on /syn/note/ping/notes, 8 slots each, single notes and the bracket chord ("
+			++ (chord !? { chord[\args] }) ++ "), a /trig pulse per event"]
 	},
 	"pad(\\x).mapExp(200, 8000)" -> { |entries|
 		var sig = lastOf.(entries, "/syn/kr/syn_sig1"), norm = lastOf.(entries, "/syn/krn/syn_sig1");
@@ -304,7 +303,7 @@ Routine {
 	mark = readLog.value.size;
 	barWait.(1);
 	check.("no /syn/hit/k after hush: a brush in a stopped proxy sends nothing",
-		countOf.(since.(mark), "/syn/hit/k/count") == 0, countOf.(since.(mark), "/syn/hit/k/count").asString ++ " hits");
+		countOf.(since.(mark), "/syn/hit/k/amp") == 0, countOf.(since.(mark), "/syn/hit/k/amp").asString ++ " hits");
 	check.("the continuous stream keeps flowing (kr proxies are not silenced by hush)",
 		countOf.(since.(mark), "/syn/kr/r") > 10, countOf.(since.(mark), "/syn/kr/r").asString ++ " × /syn/kr/r in a bar");
 	check.("no warnings so far", Broadcast.warnings.isEmpty, Broadcast.warnings.values.asString);
@@ -320,12 +319,19 @@ Routine {
 	check.("/syn/tempo carries the clock in BPM",
 		lastOf.(entries, "/syn/tempo").notNil and: { (lastOf.(entries, "/syn/tempo")[\args][0].asFloat - 120).abs < 0.01 },
 		lastOf.(entries, "/syn/tempo") !? { |e| e[\args][0] });
-	["bar", "half", "quarter", "eighth", "sixteenth"].do { |name|
-		var address = "/syn/" ++ name;
+	pat = entries.select { |e| e[\address] == "/syn/bar" }.collect { |e| e[\args][0].asFloat };
+	check.("/syn/bar is a 0..1 phase that moves",
+		pat.size > 10 and: { pat.every(_.inclusivelyBetween(0, 1)) } and: { (pat.maxItem - pat.minItem) > 0.5 },
+		pat.size.asString ++ " values, " ++ (pat.minItem ? "-") ++ ".." ++ (pat.maxItem ? "-"));
+	// at 120 bpm, in 2 s: 2 half notes, 4 quarters, 8 eighths, 16 sixteenths — each a 1 then a 0
+	[["half", 2], ["quarter", 4], ["eighth", 8], ["sixteenth", 16]].do { |pair|
+		var address = "/syn/" ++ pair[0];
 		var values = entries.select { |e| e[\address] == address }.collect { |e| e[\args][0].asFloat };
-		check.(address ++ " is a 0..1 phase that moves",
-			values.size > 10 and: { values.every(_.inclusivelyBetween(0, 1)) } and: { (values.maxItem - values.minItem) > 0.5 },
-			values.size.asString ++ " values, " ++ (values.minItem ? "-") ++ ".." ++ (values.maxItem ? "-"));
+		var ups = values.count(_ == 1), downs = values.count(_ == 0);
+		check.(address ++ " pulses once per " ++ pair[0] ++ " note",
+			values.every { |v| (v == 0) or: { v == 1 } } and: { ups.inclusivelyBetween(pair[1] - 1, pair[1] + 1) }
+				and: { downs >= (ups - 1) },
+			ups.asString ++ " ups and " ++ downs ++ " downs in 2 s (expected about " ++ pair[1] ++ ")");
 	};
 	check.("no /syn/beat any more: the bar phase is called bar", countOf.(entries, "/syn/beat") == 0,
 		countOf.(entries, "/syn/beat").asString ++ " × /syn/beat");

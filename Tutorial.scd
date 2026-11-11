@@ -44,10 +44,10 @@ Broadcast.start(NetAddr("127.0.0.1", 10000), stems: false);
 Broadcast.status;
 
 // WATCH  /syn/alive ticks once a second (seconds since start) — the line is up.
-//        /syn/tempo and the phases (/syn/bar, /half, /quarter, /eighth, /sixteenth)
-//        start straight away: the clock is always running, even in silence. /syn/kr/tempo
-//        is the same tempo again, in beats per SECOND — JITLib's own ~tempo proxy, and
-//        every control proxy streams (lesson 6).
+//        /syn/tempo and the /syn/bar phase start straight away, and /syn/quarter,
+//        /eighth, /sixteenth and /half pulse on the grid: the clock is always running,
+//        even in silence. /syn/kr/tempo is the same tempo in beats per SECOND — JITLib's
+//        own ~tempo proxy, and every control proxy streams (lesson 6).
 
 
 /* ============================================================================
@@ -62,8 +62,8 @@ bpm(96);
 grid(4);
 
 // WATCH  /syn/tempo reads 96.
-//        /syn/bar ramps 0 -> 1 once per BAR (4 beats) and drops back; /syn/half,
-//        /syn/quarter, /syn/eighth and /syn/sixteenth do the same per note value, bar-aligned.
+//        /syn/bar ramps 0 -> 1 once per BAR (4 beats) and drops back. /syn/quarter
+//        pulses 1 then 0 on every beat; /eighth, /sixteenth and /half on their own grids.
 
 
 /* ============================================================================
@@ -94,8 +94,8 @@ grid(4);
 ~cp.play;
 
 // LISTEN a four-on-the-floor-ish groove with claps rolling over the top.
-// WATCH  /syn/hit/k/…, /syn/hit/s/…, /syn/hit/perc/…, /syn/hit/cp/… — per hit: /amp,
-//        /index (which sample in the folder played), /dur, and /count going up by one.
+// WATCH  /syn/hit/k/trig, /syn/hit/s/trig, /syn/hit/perc/trig, /syn/hit/cp/trig pulse
+//        on every hit, with /amp, /index (which sample played) and /dur (seconds) set first.
 //        Accents arrive with a higher amp (1.4x). They land on the sound,
 //        not ahead of it.
 
@@ -135,8 +135,8 @@ grid(4);
 ~m = \mark.deg("0 2 4 7 9 7 4 2", 0.25, oct: 6, amp: 0.2, scale: Scale.majorPentatonic);
 
 // LISTEN a bright, bell-ish line (\mark is the percussive voice).
-// WATCH  /syn/note/mark/amp, /pitch (the lowest MIDI note), /notes (every note of a
-//        bracket chord in one message), /size, /degree, /degrees, /dur (beats), /count.
+// WATCH  /syn/note/mark/trig pulses per event; /notes holds the MIDI notes, lowest
+//        first, in eight slots (a bracket chord fills three); /amp and /dur in seconds.
 
 
 /* ============================================================================
@@ -158,8 +158,8 @@ grid(4);
 ~pad = Pbindf(\brush.chord("Cm7 Fm9 Abmaj7 G7", 4, amp: 0.15), \hue, Pseq([0.1, 0.35, 0.6, 0.85], inf));
 
 // LISTEN a soft pad under everything, its timbre turning with each chord.
-// WATCH  /syn/note/brush/notes carries all four notes of each chord; /pitch is the
-//        lowest. (Hue is not in /syn/note — paint with lesson 14's words and it is.)
+// WATCH  /syn/note/brush/notes carries all four notes of each chord, lowest first;
+//        /trig pulses per chord. (Hue is not in /syn/note — paint with lesson 14's words.)
 
 
 /* ============================================================================
@@ -330,7 +330,7 @@ Break.list("monosole");
 ~ch = \b92bpm_2.chop("0.3. 2.1. 0.33 7654", amp: 0.6);
 ~ch.play;
 
-// WATCH  /syn/hit/b92bpm_2/amp, /index (the slice number) and /count, once per slice played.
+// WATCH  /syn/hit/b92bpm_2/trig pulses per slice, /index is the slice number, /amp, /dur.
 
 
 /* ============================================================================
@@ -388,8 +388,8 @@ Paint.colors.postln;                             // the tubes
 ~pad.play;
 
 // LISTEN the pad from lesson 5, now orange: the warm, saw end of the brush's wheel.
-// WATCH  /syn/paint/brush/amp, /pitch, /notes (all four), /size, /dur, /hue (near 0.08),
-//        /sat, /val and /count. The colour's coordinates are its screen colour: draw them.
+// WATCH  /syn/paint/brush/trig pulses per chord; /notes (all four, lowest first), /amp,
+//        /dur, /hue (near 0.08), /sat, /val. The colour's coordinates are its screen colour.
 
 ~pad = \orange.brush("Cm7 Fm9 Abmaj7 G7", 4, amp: 0.15).darker(0.3);
 
@@ -409,7 +409,7 @@ Paint.colors.postln;                             // the tubes
 ~dr = \violet.drip(2, "0 3 5 7", amp: 0.2);     // sparse touches, random timing and notes
 ~dr.play;
 
-// WATCH  /syn/paint/mark/count, /syn/paint/dab/count, /syn/paint/drip/count — drip's rises irregularly.
+// WATCH  /syn/paint/mark/trig, /syn/paint/dab/trig, /syn/paint/drip/trig — drip's pulses irregularly.
 
 ~bed = \grey.wash(~r, amp: 0.15);                // a bed at the root
 ~bed.fade(4).play;
@@ -418,7 +418,7 @@ Paint.colors.postln;                             // the tubes
 ~cloud.fade(4).play;
 
 // LISTEN wash and spray both sit on ~r: move the root and both follow.
-// WATCH  /syn/paint/wash/count every 16 beats and /syn/paint/spray/count every 4.
+// WATCH  /syn/paint/wash/trig every 16 beats and /syn/paint/spray/trig every 4.
 
 ~bed = \grey.mix(\blue, 0.5).wash(~r, amp: 0.15);   // a pigment between two tubes
 
